@@ -6,6 +6,7 @@ services:
   - type: web
     name: smart-health-sync
     env: python
+    pythonVersion: "3.11.9"
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
