@@ -2,14 +2,13 @@
 
 {% block content %}
 <section class="hero-section">
-  <!-- EKG pulse line animation across top -->
   <div class="ekg-stripe">
     <svg class="ekg-svg" viewBox="0 0 1200 60" preserveAspectRatio="none">
       <polyline class="ekg-line" points="0,30 80,30 120,5 160,55 200,15 240,45 280,30 1200,30"/>
     </svg>
   </div>
 
-  <div class="hero-inner container">
+  <div class="container">
     <div class="hero-badge reveal">
       <span class="badge-dot"></span>
       Machine Learning · Healthcare Informatics
@@ -27,116 +26,146 @@
     </p>
 
     <div class="hero-actions reveal">
-      <a href="/predict" class="btn-primary">
-        <span class="btn-icon">▶</span> Run Diagnosis
-      </a>
+      <a href="/predict" class="btn-primary"><span>▶</span> Run Diagnosis</a>
       <a href="/results" class="btn-outline">View Model Benchmarks →</a>
     </div>
 
-    <!-- Stats ticker -->
-    <div class="stats-row stagger-children">
-      <div class="stat-card reveal">
-        <div class="stat-value" data-target="95.1" data-suffix="%">0%</div>
-        <div class="stat-label">Best Accuracy</div>
-        <div class="stat-model">Random Forest</div>
+    <!-- Stats row — Bootstrap grid -->
+    <div class="row g-3 stagger-children">
+      <div class="col-6 col-md-3">
+        <div class="stat-card reveal">
+          <div class="stat-value" data-target="95.1" data-suffix="%">0%</div>
+          <div class="stat-label">Best Accuracy</div>
+          <div class="stat-model">Random Forest</div>
+        </div>
       </div>
-      <div class="stat-card reveal">
-        <div class="stat-value" data-target="4" data-suffix="">0</div>
-        <div class="stat-label">ML Models Trained</div>
-        <div class="stat-model">RF · SVM · DT · LR</div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card reveal">
+          <div class="stat-value" data-target="4" data-suffix="">0</div>
+          <div class="stat-label">ML Models Trained</div>
+          <div class="stat-model">RF · SVM · DT · LR</div>
+        </div>
       </div>
-      <div class="stat-card reveal">
-        <div class="stat-value" data-target="6" data-suffix="">0</div>
-        <div class="stat-label">Detectable Conditions</div>
-        <div class="stat-model">Incl. Thalassemia</div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card reveal">
+          <div class="stat-value" data-target="6" data-suffix="">0</div>
+          <div class="stat-label">Detectable Conditions</div>
+          <div class="stat-model">Incl. Thalassemia</div>
+        </div>
       </div>
-      <div class="stat-card reveal">
-        <div class="stat-value" data-target="24" data-suffix="">0</div>
-        <div class="stat-label">Biomarker Inputs</div>
-        <div class="stat-model">Clinical Markers</div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card reveal">
+          <div class="stat-value" data-target="24" data-suffix="">0</div>
+          <div class="stat-label">Biomarker Inputs</div>
+          <div class="stat-model">Clinical Markers</div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="workflow-section container">
-  <div class="section-eyebrow reveal">Process</div>
-  <h2 class="section-title reveal">Intelligent Workflow</h2>
-  <div class="workflow-grid stagger-children">
-    <div class="workflow-step reveal">
-      <div class="step-number">01</div>
-      <div class="step-title">Enter Clinical Data</div>
-      <div class="step-desc">Input 24 standardized biomarkers from laboratory blood panels and metabolic screenings into our secure clinical engine.</div>
-    </div>
-    <div class="workflow-step reveal">
-      <div class="step-number">02</div>
-      <div class="step-title">Neural Inference</div>
-      <div class="step-desc">Our ensembled classifiers analyze data points against trained disease benchmarks using optimized Random Forest architectures.</div>
-    </div>
-    <div class="workflow-step reveal">
-      <div class="step-number">03</div>
-      <div class="step-title">Predictive Output</div>
-      <div class="step-desc">Receive a comprehensive diagnostic report with weighted probability scores and prioritized clinical benchmarks.</div>
+<section class="workflow-section">
+  <div class="container">
+    <div class="section-eyebrow reveal">Process</div>
+    <h2 class="section-title reveal">Intelligent Workflow</h2>
+    <div class="workflow-grid">
+      <div class="row g-0 stagger-children">
+        <div class="col-12 col-md-4">
+          <div class="workflow-step reveal">
+            <div class="step-number">01</div>
+            <div class="step-title">Enter Clinical Data</div>
+            <div class="step-desc">Input 24 standardized biomarkers from laboratory blood panels and metabolic screenings into our secure clinical engine.</div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="workflow-step reveal">
+            <div class="step-number">02</div>
+            <div class="step-title">Neural Inference</div>
+            <div class="step-desc">Our ensembled classifiers analyze data points against trained disease benchmarks using optimized Random Forest architectures.</div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="workflow-step reveal">
+            <div class="step-number">03</div>
+            <div class="step-title">Predictive Output</div>
+            <div class="step-desc">Receive a comprehensive diagnostic report with weighted probability scores and prioritized clinical benchmarks.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="conditions-section container">
-  <div class="section-eyebrow reveal">Capabilities</div>
-  <h2 class="section-title reveal">Six Detectable Conditions</h2>
-  <div class="conditions-grid stagger-children">
-    <div class="condition-card reveal" data-condition="healthy">
-      <div class="condition-icon">✓</div>
-      <div class="condition-name">Healthy</div>
-      <div class="condition-desc">Standard physiological values within established healthcare benchmarks.</div>
-      <div class="condition-meta">
-        <span class="meta-pill">N = 850</span>
-        <span class="meta-pill meta-f1">F1: 0.985</span>
+<section class="conditions-section">
+  <div class="container">
+    <div class="section-eyebrow reveal">Capabilities</div>
+    <h2 class="section-title reveal">Six Detectable Conditions</h2>
+    <div class="row g-3 stagger-children">
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="condition-card reveal">
+          <div class="condition-icon">✓</div>
+          <div class="condition-name">Healthy</div>
+          <div class="condition-desc">Standard physiological values within established healthcare benchmarks.</div>
+          <div class="condition-meta">
+            <span class="meta-pill">N = 850</span>
+            <span class="meta-pill meta-f1">F1: 0.985</span>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="condition-card reveal" data-condition="diabetes">
-      <div class="condition-icon">●</div>
-      <div class="condition-name">Diabetes</div>
-      <div class="condition-desc">Chronic elevated blood glucose and metabolic insulin dysregulation indicators.</div>
-      <div class="condition-meta">
-        <span class="meta-pill">N = 780</span>
-        <span class="meta-pill meta-f1">F1: 0.942</span>
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="condition-card reveal">
+          <div class="condition-icon">●</div>
+          <div class="condition-name">Diabetes</div>
+          <div class="condition-desc">Chronic elevated blood glucose and metabolic insulin dysregulation indicators.</div>
+          <div class="condition-meta">
+            <span class="meta-pill">N = 780</span>
+            <span class="meta-pill meta-f1">F1: 0.942</span>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="condition-card reveal" data-condition="anemia">
-      <div class="condition-icon">🩸</div>
-      <div class="condition-name">Anemia</div>
-      <div class="condition-desc">Low hemoglobin concentrations or iron-deficient erythropoiesis markers.</div>
-      <div class="condition-meta">
-        <span class="meta-pill">N = 620</span>
-        <span class="meta-pill meta-f1">F1: 0.958</span>
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="condition-card reveal">
+          <div class="condition-icon">🩸</div>
+          <div class="condition-name">Anemia</div>
+          <div class="condition-desc">Low hemoglobin concentrations or iron-deficient erythropoiesis markers.</div>
+          <div class="condition-meta">
+            <span class="meta-pill">N = 620</span>
+            <span class="meta-pill meta-f1">F1: 0.958</span>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="condition-card reveal" data-condition="heart">
-      <div class="condition-icon">❤</div>
-      <div class="condition-name">Heart Disease</div>
-      <div class="condition-desc">Cardiovascular biomarkers indicating ischemic or hypertensive system stress.</div>
-      <div class="condition-meta">
-        <span class="meta-pill">N = 540</span>
-        <span class="meta-pill meta-f1">F1: 0.931</span>
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="condition-card reveal">
+          <div class="condition-icon">❤</div>
+          <div class="condition-name">Heart Disease</div>
+          <div class="condition-desc">Cardiovascular biomarkers indicating ischemic or hypertensive system stress.</div>
+          <div class="condition-meta">
+            <span class="meta-pill">N = 540</span>
+            <span class="meta-pill meta-f1">F1: 0.931</span>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="condition-card reveal" data-condition="thalassemia">
-      <div class="condition-icon">🧬</div>
-      <div class="condition-name">Thalassemia</div>
-      <div class="condition-desc">Genetic blood disorders characterized by abnormal hemoglobin production.</div>
-      <div class="condition-meta">
-        <span class="meta-pill">N = 450</span>
-        <span class="meta-pill meta-f1">F1: 0.967</span>
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="condition-card reveal">
+          <div class="condition-icon">🧬</div>
+          <div class="condition-name">Thalassemia</div>
+          <div class="condition-desc">Genetic blood disorders characterized by abnormal hemoglobin production.</div>
+          <div class="condition-meta">
+            <span class="meta-pill">N = 450</span>
+            <span class="meta-pill meta-f1">F1: 0.967</span>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="condition-card reveal" data-condition="thrombo">
-      <div class="condition-icon">◌</div>
-      <div class="condition-name">Thrombocytopenia</div>
-      <div class="condition-desc">Abnormally low platelet counts indicating potential coagulation disorders.</div>
-      <div class="condition-meta">
-        <span class="meta-pill">N = 460</span>
-        <span class="meta-pill meta-f1">F1: 0.948</span>
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="condition-card reveal">
+          <div class="condition-icon">◌</div>
+          <div class="condition-name">Thrombocytopenia</div>
+          <div class="condition-desc">Abnormally low platelet counts indicating potential coagulation disorders.</div>
+          <div class="condition-meta">
+            <span class="meta-pill">N = 460</span>
+            <span class="meta-pill meta-f1">F1: 0.948</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -145,7 +174,6 @@
 
 {% block scripts %}
 <script>
-// Animate stat counters on scroll
 const counters = document.querySelectorAll('.stat-value[data-target]');
 const statsObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
@@ -160,8 +188,7 @@ const statsObserver = new IntersectionObserver((entries) => {
         if (!start) start = timestamp;
         const progress = Math.min((timestamp - start) / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
-        const current = eased * target;
-        el.textContent = (isDecimal ? current.toFixed(1) : Math.floor(current)) + suffix;
+        el.textContent = (isDecimal ? (eased*target).toFixed(1) : Math.floor(eased*target)) + suffix;
         if (progress < 1) requestAnimationFrame(step);
       };
       requestAnimationFrame(step);

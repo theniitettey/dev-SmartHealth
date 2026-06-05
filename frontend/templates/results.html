@@ -6,7 +6,7 @@
     <div class="page-eyebrow">Performance Dashboard</div>
     <h1 class="page-title">ML Model Evaluation</h1>
     <p class="page-desc">
-      Explore the cross-validation metrics, confusion matrices, and predictive reliability scores 
+      Explore the cross-validation metrics, confusion matrices, and predictive reliability scores
       for each clinical diagnostic model.
     </p>
   </div>
@@ -17,7 +17,7 @@
     <div class="section-eyebrow">Benchmarks</div>
     <h2 class="section-title">Model Performance Matrix</h2>
   </div>
-  
+
   <div class="perf-table-wrap reveal">
     <table class="perf-table">
       <thead>
@@ -67,34 +67,34 @@
     </table>
   </div>
 
-  <div class="section-eyebrow reveal" style="margin-top: 80px;">Visual Analytics</div>
+  <div class="section-eyebrow reveal mt-5 pt-4">Visual Analytics</div>
   <h2 class="section-title reveal">5-Fold Cross Validation</h2>
-  <div class="stagger-children" style="margin-bottom: 80px;">
-    <div class="reveal" style="margin-bottom: 32px;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.9rem;">
+  <div class="stagger-children mb-5">
+    <div class="reveal mb-4">
+      <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.9rem;">
         <span>Random Forest</span>
-        <span style="color: var(--cyan-primary)">94.1%</span>
+        <span style="color:var(--cyan-primary)">94.1%</span>
       </div>
       <div class="bench-bar-outer"><div class="bench-bar-fill" data-width="94.1"></div></div>
     </div>
-    <div class="reveal" style="margin-bottom: 32px;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.9rem;">
+    <div class="reveal mb-4">
+      <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.9rem;">
         <span>SVM (SVC)</span>
-        <span style="color: var(--cyan-primary)">93.8%</span>
+        <span style="color:var(--cyan-primary)">93.8%</span>
       </div>
       <div class="bench-bar-outer"><div class="bench-bar-fill" data-width="93.8"></div></div>
     </div>
-    <div class="reveal" style="margin-bottom: 32px;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.9rem;">
+    <div class="reveal mb-4">
+      <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.9rem;">
         <span>Decision Tree</span>
-        <span style="color: var(--cyan-primary)">91.7%</span>
+        <span style="color:var(--cyan-primary)">91.7%</span>
       </div>
       <div class="bench-bar-outer"><div class="bench-bar-fill" data-width="91.7"></div></div>
     </div>
-    <div class="reveal" style="margin-bottom: 32px;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.9rem;">
+    <div class="reveal mb-4">
+      <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.9rem;">
         <span>Logistic Regression</span>
-        <span style="color: var(--cyan-primary)">82.2%</span>
+        <span style="color:var(--cyan-primary)">82.2%</span>
       </div>
       <div class="bench-bar-outer"><div class="bench-bar-fill" data-width="82.2"></div></div>
     </div>
@@ -104,66 +104,60 @@
     <div class="section-eyebrow">Random Forest Insights</div>
     <h2 class="section-title">Top Predictive Biomarkers</h2>
     <div class="feature-bars stagger-children">
-      <div class="feature-row reveal" style="margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary);">
+      <div class="feature-row reveal mb-4">
+        <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.85rem;color:var(--text-secondary);">
           <span>Glucose</span>
-          <span style="color: var(--cyan-primary);">0.94</span>
+          <span style="color:var(--cyan-primary);">0.94</span>
         </div>
-        <div class="bench-bar-outer" style="height: 4px;"><div class="bench-bar-fill" data-width="94" style="background: var(--cyan-primary);"></div></div>
+        <div class="bench-bar-outer" style="height:4px;"><div class="bench-bar-fill" data-width="94" style="background:var(--cyan-primary);"></div></div>
       </div>
-      <div class="feature-row reveal" style="margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary);">
+      <div class="feature-row reveal mb-4">
+        <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.85rem;color:var(--text-secondary);">
           <span>HbA1c</span>
-          <span style="color: var(--cyan-primary);">0.91</span>
+          <span style="color:var(--cyan-primary);">0.91</span>
         </div>
-        <div class="bench-bar-outer" style="height: 4px;"><div class="bench-bar-fill" data-width="91" style="background: var(--cyan-primary);"></div></div>
+        <div class="bench-bar-outer" style="height:4px;"><div class="bench-bar-fill" data-width="91" style="background:var(--cyan-primary);"></div></div>
       </div>
-      <div class="feature-row reveal" style="margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary);">
+      <div class="feature-row reveal mb-4">
+        <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.85rem;color:var(--text-secondary);">
           <span>Hemoglobin</span>
-          <span style="color: var(--cyan-primary);">0.88</span>
+          <span style="color:var(--cyan-primary);">0.88</span>
         </div>
-        <div class="bench-bar-outer" style="height: 4px;"><div class="bench-bar-fill" data-width="88" style="background: var(--cyan-primary);"></div></div>
+        <div class="bench-bar-outer" style="height:4px;"><div class="bench-bar-fill" data-width="88" style="background:var(--cyan-primary);"></div></div>
       </div>
-      <div class="feature-row reveal" style="margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary);">
+      <div class="feature-row reveal mb-4">
+        <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.85rem;color:var(--text-secondary);">
           <span>Troponin</span>
-          <span style="color: var(--cyan-primary);">0.85</span>
+          <span style="color:var(--cyan-primary);">0.85</span>
         </div>
-        <div class="bench-bar-outer" style="height: 4px;"><div class="bench-bar-fill" data-width="85" style="background: var(--cyan-primary);"></div></div>
+        <div class="bench-bar-outer" style="height:4px;"><div class="bench-bar-fill" data-width="85" style="background:var(--cyan-primary);"></div></div>
       </div>
     </div>
   </section>
 
-  <div class="section-eyebrow reveal" style="margin-top: 80px;">Confusion Matrix</div>
+  <div class="section-eyebrow reveal mt-5 pt-4">Confusion Matrix</div>
   <h2 class="section-title reveal">Random Forest Distribution</h2>
-  <div class="matrix-grid stagger-children">
-    <div class="matrix-card winner reveal">
-      <div class="matrix-title">Clinical Accuracy Distribution</div>
-      <div class="perf-table-wrap" style="border: none;">
-        <style>
-          .matrix-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.78rem; text-align: center; }
-          .matrix-table th, .matrix-table td { padding: 8px; border: 1px solid var(--bg-border); }
-          .matrix-cell-high { background: rgba(197, 231, 16, 0.15); color: var(--cyan-primary); font-weight: 700; }
-          .matrix-cell-med { background: rgba(244, 223, 107, 0.1); color: var(--amber-warn); }
-          .matrix-cell-low { color: var(--text-secondary); }
-          .matrix-cell-zero { opacity: 0.2; }
-        </style>
-        <table class="matrix-table">
-          <thead>
-            <tr>
-              <th></th><th>Ane</th><th>Dia</th><th>HTH</th><th>HRT</th><th>Tha</th><th>Thr</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>Ane</td><td class="matrix-cell-high">120</td><td class="matrix-cell-low">2</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td></tr>
-            <tr><td>Dia</td><td class="matrix-cell-low">1</td><td class="matrix-cell-high">115</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td></tr>
-            <tr><td>HTH</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-low">1</td><td class="matrix-cell-high">130</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-med">2</td></tr>
-            <tr><td>HRT</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-med">2</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-high">118</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td></tr>
-            <tr><td>Tha</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-high">122</td><td class="matrix-cell-zero">0</td></tr>
-            <tr><td>Thr</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-high">125</td></tr>
-          </tbody>
-        </table>
+  <div class="row stagger-children mb-5">
+    <div class="col-12">
+      <div class="matrix-card winner reveal">
+        <div class="matrix-title">Clinical Accuracy Distribution</div>
+        <div class="table-responsive">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th></th><th>Ane</th><th>Dia</th><th>HTH</th><th>HRT</th><th>Tha</th><th>Thr</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Ane</td><td class="matrix-cell-high">120</td><td class="matrix-cell-low">2</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td></tr>
+              <tr><td>Dia</td><td class="matrix-cell-low">1</td><td class="matrix-cell-high">115</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td></tr>
+              <tr><td>HTH</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-low">1</td><td class="matrix-cell-high">130</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-med">2</td></tr>
+              <tr><td>HRT</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-med">2</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-high">118</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td></tr>
+              <tr><td>Tha</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-high">122</td><td class="matrix-cell-zero">0</td></tr>
+              <tr><td>Thr</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-low">1</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-zero">0</td><td class="matrix-cell-high">125</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -172,7 +166,6 @@
 
 {% block scripts %}
 <script>
-// Animate bench bars on scroll
 const benchBars = document.querySelectorAll('.bench-bar-fill[data-width]');
 const barObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {

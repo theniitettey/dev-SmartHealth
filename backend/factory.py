@@ -48,6 +48,7 @@ def create_app() -> Flask:
         static_url_path="/static",
     )
     app.config.from_object(cfg)
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0  # never cache static files in dev
 
     # ── Extensions ────────────────────────────────────────────
     CORS(app, resources={r"/api/*": {"origins": cfg.CORS_ORIGINS}})

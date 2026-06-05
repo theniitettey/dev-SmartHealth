@@ -1,8 +1,3 @@
-/**
- * Smart Health Sync - Main JavaScript
- * Full-Stack Overhaul
- */
-
 document.addEventListener('DOMContentLoaded', () => {
     // Navbar scroll effect
     const navbar = document.getElementById('navbar');
@@ -11,16 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
             navbar.classList.toggle('scrolled', window.scrollY > 40);
         }
     });
-
-    // Hamburger toggle
-    const hamburger = document.getElementById('hamburger');
-    const navLinks = document.getElementById('nav-links');
-    if (hamburger && navLinks) {
-        hamburger.addEventListener('click', function() {
-            this.classList.toggle('open');
-            navLinks.classList.toggle('open');
-        });
-    }
 
     // Mark active link
     const currentPath = window.location.pathname;

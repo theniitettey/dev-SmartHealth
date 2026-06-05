@@ -6,230 +6,272 @@
     <div class="page-eyebrow">Diagnosis Engine</div>
     <h1 class="page-title">Run Clinical Prediction</h1>
     <p class="page-desc">
-      Input the patient's biological markers from laboratory screenings. Ensuring accuracy in all 24 fields 
-      is essential for reliable diagnostic predictions with Smart Health Sync.
+      Input the patient's biological markers from laboratory screenings. All 24 fields
+      are required for reliable diagnostic predictions.
     </p>
   </div>
 </section>
 
-<section class="predict-main container">
-  <form id="predictionForm">
-    <!-- Section 1 - Select Classifier -->
-    <div class="form-section-header">
-      <span class="form-section-number">01</span>
-      <h3 class="form-section-title">Select ML Classifier</h3>
-    </div>
-    <div class="model-selector stagger-children">
-      <div class="model-option selected reveal" data-model="random_forest">
-        <div class="model-badge">Best</div>
-        <div class="model-name">Random Forest</div>
-        <div class="model-accuracy">95.1%</div>
-      </div>
-      <div class="model-option reveal" data-model="svm">
-        <div class="model-name">SVM (SVC)</div>
-        <div class="model-accuracy">94.9%</div>
-      </div>
-      <div class="model-option reveal" data-model="decision_tree">
-        <div class="model-name">Decision Tree</div>
-        <div class="model-accuracy">92.6%</div>
-      </div>
-      <div class="model-option reveal" data-model="logistic_regression">
-        <div class="model-name">Log. Regression</div>
-        <div class="model-accuracy">81.9%</div>
-      </div>
-    </div>
-    
-    <!-- Hidden input for model selection -->
-    <input type="hidden" name="model" id="selectedModel" value="random_forest">
+<section class="predict-main">
+  <div class="container">
+    <form id="predictionForm">
 
-    <!-- Section 2 - Clinical Presets -->
-    <div class="form-section-header">
-      <span class="form-section-number">02</span>
-      <h3 class="form-section-title">Clinical Presets</h3>
-    </div>
-    <div class="preset-strip">
-      <div class="preset-btn preset-healthy" data-preset="healthy"><span class="preset-dot"></span>Healthy</div>
-      <div class="preset-btn preset-diabetes" data-preset="diabetes"><span class="preset-dot"></span>Diabetic</div>
-      <div class="preset-btn preset-anemia" data-preset="anemia"><span class="preset-dot"></span>Anemic</div>
-      <div class="preset-btn preset-cardio" data-preset="heart"><span class="preset-dot"></span>Cardio</div>
-    </div>
+      <!-- 01 — Select Classifier -->
+      <div class="form-section-header">
+        <span class="form-section-number">01</span>
+        <h3 class="form-section-title">Select ML Classifier</h3>
+      </div>
+      <div class="row g-3 mb-4 stagger-children">
+        <div class="col-6 col-md-3">
+          <div class="model-option selected reveal" data-model="random_forest">
+            <div class="model-badge">Best</div>
+            <div class="model-name">Random Forest</div>
+            <div class="model-accuracy">95.1%</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="model-option reveal" data-model="svm">
+            <div class="model-name">SVM (SVC)</div>
+            <div class="model-accuracy">94.9%</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="model-option reveal" data-model="decision_tree">
+            <div class="model-name">Decision Tree</div>
+            <div class="model-accuracy">92.6%</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="model-option reveal" data-model="logistic_regression">
+            <div class="model-name">Log. Regression</div>
+            <div class="model-accuracy">81.9%</div>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" name="model" id="selectedModel" value="random_forest">
 
-    <!-- Data Info Strip -->
-    <div class="data-info-strip reveal">
-      <div class="info-item"><span class="info-key">Training Samples</span><span class="info-val">3,700+</span></div>
-      <div class="info-item"><span class="info-key">Balancing</span><span class="info-val">SMOTE Applied</span></div>
-      <div class="info-item"><span class="info-key">Train / Test Split</span><span class="info-val">80 / 20</span></div>
-      <div class="info-item"><span class="info-key">CV Strategy</span><span class="info-val">Stratified 5-Fold</span></div>
+      <!-- 02 — Clinical Presets -->
+      <div class="form-section-header">
+        <span class="form-section-number">02</span>
+        <h3 class="form-section-title">Clinical Presets</h3>
+      </div>
+      <div class="preset-strip mb-3">
+        <div class="preset-btn preset-healthy"  data-preset="healthy"><span class="preset-dot"></span>Healthy</div>
+        <div class="preset-btn preset-diabetes" data-preset="diabetes"><span class="preset-dot"></span>Diabetic</div>
+        <div class="preset-btn preset-anemia"   data-preset="anemia"><span class="preset-dot"></span>Anemic</div>
+        <div class="preset-btn preset-cardio"   data-preset="heart"><span class="preset-dot"></span>Cardio</div>
+      </div>
+
+      <div class="data-info-strip reveal">
+        <div class="info-item"><span class="info-key">Training Samples</span><span class="info-val">3,700+</span></div>
+        <div class="info-item"><span class="info-key">Balancing</span><span class="info-val">SMOTE Applied</span></div>
+        <div class="info-item"><span class="info-key">Train / Test Split</span><span class="info-val">80 / 20</span></div>
+        <div class="info-item"><span class="info-key">CV Strategy</span><span class="info-val">Stratified 5-Fold</span></div>
+      </div>
+
+      <div class="normalization-notice reveal">
+        <span>ℹ</span>
+        <div>All 24 markers are pre-normalized to a 0.00–1.00 scale before model inference.</div>
+      </div>
+
+      <!-- 03 — Biomarkers -->
+      <div class="form-section-header">
+        <span class="form-section-number">03</span>
+        <h3 class="form-section-title">Clinical Biomarkers</h3>
+      </div>
+
+      <!-- Metabolic Indices -->
+      <div class="biomarker-group-title reveal">Metabolic Indices</div>
+      <div class="row g-3 mb-4 stagger-children">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Glucose</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Glucose" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Insulin</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Insulin" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>BMI</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="BMI" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>HbA1c</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="HbA1c" value="0.5" min="0" max="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Cardiovascular Metrics -->
+      <div class="biomarker-group-title reveal">Cardiovascular Metrics</div>
+      <div class="row g-3 mb-4 stagger-children">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Cholesterol</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Cholesterol" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>LDL Cholesterol</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="LDL Cholesterol" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>HDL Cholesterol</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="HDL Cholesterol" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Triglycerides</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Triglycerides" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Systolic BP</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Systolic Blood Pressure" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Diastolic BP</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Diastolic Blood Pressure" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Heart Rate</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Heart Rate" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Troponin</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Troponin" value="0.5" min="0" max="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Hematology -->
+      <div class="biomarker-group-title reveal">Hematology</div>
+      <div class="row g-3 mb-4 stagger-children">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Hemoglobin</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Hemoglobin" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Platelets</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Platelets" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>White Blood Cells</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="White Blood Cells" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Red Blood Cells</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Red Blood Cells" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Hematocrit</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Hematocrit" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>MCV</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Mean Corpuscular Volume" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>MCH</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Mean Corpuscular Hemoglobin" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>MCHC</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Mean Corpuscular Hemoglobin Concentration" value="0.5" min="0" max="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Liver & Kidney -->
+      <div class="biomarker-group-title reveal">Liver &amp; Kidney</div>
+      <div class="row g-3 mb-4 stagger-children">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>ALT</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="ALT" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>AST</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="AST" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>Creatinine</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="Creatinine" value="0.5" min="0" max="1">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label"><span>CRP</span><span class="input-range-hint">0.0–1.0</span></label>
+            <input type="number" step="0.01" class="biomarker-input" data-feature="C-reactive Protein" value="0.5" min="0" max="1">
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <span class="btn-spinner"></span>
+        <span class="btn-text">Run Clinical Diagnosis Engine</span>
+      </button>
+    </form>
+
+    <!-- Result Panel -->
+    <div class="result-panel" id="resultsPanel" style="display:none;">
+      <div class="result-header">
+        <div class="result-diagnosis" id="diagnosisName">Searching...</div>
+        <div class="result-confidence" id="confidencePercent">Confidence: 0%</div>
+      </div>
+      <div class="confidence-bar"><div class="confidence-fill" id="confidenceBar"></div></div>
+      <p class="result-description" id="diagnosisDescription" style="color:var(--text-secondary);margin-bottom:20px;line-height:1.6;font-size:0.9rem;">
+        Clinical analysis will appear here.
+      </p>
+      <div class="form-section-header">
+        <h3 class="form-section-title" style="font-size:0.8rem;">Weighted Probabilities</h3>
+      </div>
+      <table class="prob-table" id="probTable"></table>
+      <div class="form-section-header" style="margin-top:28px;">
+        <h3 class="form-section-title" style="font-size:0.8rem;">Clinical Advice</h3>
+      </div>
+      <ul id="clinicalAdvice" style="color:var(--text-secondary);font-size:0.85rem;padding-left:20px;line-height:1.8;"></ul>
+      <button class="btn-outline" style="width:100%;margin-top:28px;justify-content:center;" onclick="window.print()">
+        Print Medical Report
+      </button>
     </div>
-
-    <div class="normalization-notice reveal">
-      <span class="notice-icon">ℹ</span>
-      <div>
-        All 24 markers are pre-normalized to a 0.00–1.00 scale before model inference.
-        Raw clinical values are mapped via StandardScaler trained on the UCI/Kaggle datasets.
-      </div>
-    </div>
-
-    <!-- Section 3 - Biomarkers -->
-    <div class="form-section-header">
-      <span class="form-section-number">03</span>
-      <h3 class="form-section-title">Clinical Biomarkers</h3>
-    </div>
-
-    <!-- Metabolic Indices -->
-    <div class="biomarker-group-title reveal">Metabolic Indices</div>
-    <div class="biomarker-grid stagger-children">
-      <div class="input-group reveal">
-        <label class="input-label"><span>Glucose</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Glucose" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Insulin</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Insulin" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>BMI</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="BMI" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>HbA1c</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="HbA1c" value="0.5" min="0" max="1">
-      </div>
-    </div>
-
-    <!-- Cardiovascular Metrics -->
-    <div class="biomarker-group-title reveal">Cardiovascular Metrics</div>
-    <div class="biomarker-grid stagger-children">
-      <div class="input-group reveal">
-        <label class="input-label"><span>Cholesterol</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Cholesterol" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>LDL Cholesterol</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="LDL Cholesterol" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>HDL Cholesterol</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="HDL Cholesterol" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Triglycerides</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Triglycerides" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Systolic BP</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Systolic Blood Pressure" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Diastolic BP</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Diastolic Blood Pressure" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Heart Rate</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Heart Rate" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Troponin</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Troponin" value="0.5" min="0" max="1">
-      </div>
-    </div>
-
-    <!-- Hematology -->
-    <div class="biomarker-group-title reveal">Hematology</div>
-    <div class="biomarker-grid stagger-children">
-      <div class="input-group reveal">
-        <label class="input-label"><span>Hemoglobin</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Hemoglobin" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Platelets</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Platelets" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>White Blood Cells</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="White Blood Cells" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Red Blood Cells</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Red Blood Cells" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Hematocrit</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Hematocrit" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>MCV</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Mean Corpuscular Volume" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>MCH</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Mean Corpuscular Hemoglobin" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>MCHC</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Mean Corpuscular Hemoglobin Concentration" value="0.5" min="0" max="1">
-      </div>
-    </div>
-
-    <!-- Liver & Kidney -->
-    <div class="biomarker-group-title reveal">Liver & Kidney</div>
-    <div class="biomarker-grid stagger-children">
-      <div class="input-group reveal">
-        <label class="input-label"><span>ALT</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="ALT" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>AST</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="AST" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>Creatinine</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="Creatinine" value="0.5" min="0" max="1">
-      </div>
-      <div class="input-group reveal">
-        <label class="input-label"><span>CRP</span><span class="input-range-hint">0.0 - 1.0</span></label>
-        <input type="number" step="0.01" class="biomarker-input" data-feature="C-reactive Protein" value="0.5" min="0" max="1">
-      </div>
-    </div>
-
-    <button type="submit" class="submit-btn" id="submitBtn">
-      <span class="btn-spinner"></span>
-      <span class="btn-text">Run Clinical Diagnosis Engine</span>
-    </button>
-  </form>
-
-  <!-- Result Panel -->
-  <div class="result-panel reveal" id="resultsPanel" style="display: none;">
-    <div class="result-header">
-      <div class="result-diagnosis" id="diagnosisName">Searching...</div>
-      <div class="result-confidence" id="confidencePercent">Confidence: 0%</div>
-    </div>
-    
-    <div class="confidence-bar">
-      <div class="confidence-fill" id="confidenceBar"></div>
-    </div>
-
-    <p class="result-description" id="diagnosisDescription" style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6;">
-      Clinical analysis will appear here.
-    </p>
-
-    <div class="form-section-header">
-      <h3 class="form-section-title" style="font-size: 0.8rem;">Weighted Probabilities</h3>
-    </div>
-    <table class="prob-table" id="probTable">
-      <!-- Injected via JS -->
-    </table>
-
-    <div class="form-section-header" style="margin-top: 32px;">
-      <h3 class="form-section-title" style="font-size: 0.8rem;">Clinical Advice</h3>
-    </div>
-    <ul id="clinicalAdvice" style="color: var(--text-secondary); font-size: 0.85rem; padding-left: 20px; line-height: 1.8;">
-      <!-- Injected via JS -->
-    </ul>
-
-    <button class="btn-outline" style="width: 100%; margin-top: 32px; justify-content: center;" onclick="window.print()">
-      Print Medical Report
-    </button>
   </div>
 </section>
 {% endblock %}
