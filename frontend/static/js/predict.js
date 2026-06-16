@@ -335,14 +335,14 @@ function renderFeatureImportance(importanceMap) {
     });
 }
 
-// ── Print Result Card (C2) ────────────────────────────────────
+// ── Print Result Card (C2) — results & advice only ───────────
 function preparePrintCard() {
     if (!_lastResult) return;
 
     const ts  = new Date().toLocaleString();
     const ref = 'SHS-' + Date.now().toString(36).toUpperCase();
 
-    document.getElementById('prc-ref').textContent = `Ref: ${ref}  ·  Generated: ${ts}`;
+    document.getElementById('prc-ref').textContent = `Ref: ${ref}  ·  ${ts}`;
 
     const diagEl = document.getElementById('prc-diagnosis');
     if (diagEl) diagEl.textContent = _lastResult.prediction || '—';
@@ -353,19 +353,9 @@ function preparePrintCard() {
     const confFill = document.getElementById('prc-conf-fill');
     if (confFill) confFill.style.width = (_lastResult.confidence || 0) + '%';
 
-    // Biomarker grid
-    const grid = document.getElementById('prc-biomarker-grid');
-    if (grid && _lastFeatures) {
-        grid.innerHTML = '';
-        FEATURES.forEach(f => {
-            const val = _lastFeatures[f];
-            if (val === undefined) return;
-            const cell = document.createElement('div');
-            cell.className = 'prc-item';
-            cell.innerHTML = `<div class="prc-item-label">${FEATURE_LABELS[f] || f}</div><div class="prc-item-val">${parseFloat(val).toFixed(2)}</div>`;
-            grid.appendChild(cell);
-        });
-    }
+    // Clinical description
+    const descEl = document.getElementById('prc-desc');
+    if (descEl) descEl.textContent = _lastResult.description || '';
 
     // Feature importance rows
     const fiRows = document.getElementById('prc-fi-rows');
@@ -389,9 +379,16 @@ function preparePrintCard() {
         }
     }
 
-    // Description
-    const descEl = document.getElementById('prc-desc');
-    if (descEl) descEl.textContent = _lastResult.description || '';
+    // Clinical advice
+    const adviceEl = document.getElementById('prc-advice');
+    if (adviceEl) {
+        adviceEl.innerHTML = '';
+        (_lastResult.recommendations || []).forEach(rec => {
+            const li = document.createElement('li');
+            li.textContent = rec;
+            adviceEl.appendChild(li);
+        });
+    }
 
     window.print();
 }
