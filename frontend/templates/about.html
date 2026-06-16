@@ -10,21 +10,21 @@
           <h1 class="page-title text-start">Smart Health Sync<br><span class="title-accent">Framework</span></h1>
           <p class="page-desc text-start">
             A multi-class clinical decision-support system built as a final-year Computer Science
-            project at the University of Ghana. It uses four supervised learning algorithms to
-            predict six disease categories from 24 normalized biomarkers — achieving 95.1%
-            accuracy with Random Forest as the production classifier.
+            dissertation project at the University of Ghana. It applies four supervised learning
+            classifiers to predict six disease categories from 24 normalised blood-panel biomarkers —
+            achieving 95.1% test accuracy with Random Forest as the production classifier.
           </p>
         </div>
       </div>
       <div class="col-12 col-md-6">
         <div class="tech-stack stagger-children">
-          <div class="tech-pill reveal">Python 3.13</div>
+          <div class="tech-pill reveal">Python 3.11</div>
           <div class="tech-pill reveal">Scikit-learn</div>
           <div class="tech-pill reveal">Flask</div>
           <div class="tech-pill reveal">NumPy / Pandas</div>
           <div class="tech-pill reveal">Joblib</div>
           <div class="tech-pill reveal">Bootstrap 5</div>
-          <div class="tech-pill reveal">UCI Repository</div>
+          <div class="tech-pill reveal">SMOTE</div>
           <div class="tech-pill reveal">Kaggle Datasets</div>
         </div>
       </div>
@@ -32,49 +32,399 @@
   </div>
 </section>
 
-<section class="container" style="margin-bottom: 80px;">
-  <div class="section-eyebrow reveal">Core Mandate</div>
-  <h2 class="section-title reveal">Clinical Decisions, Elevated by AI</h2>
-  <p class="reveal" style="color:var(--text-secondary);max-width:800px;line-height:1.8;margin-bottom:60px;">
-    The primary objective of Smart Health Sync is to develop a reliable clinical screening tool that utilises supervised learning models
-    to predict disease states from patient blood panel data. By ensembling multiple classification architectures, the project
-    achieves standardised diagnostics for chronic and haematological conditions.
+<!-- Dataset Description (B4/C5) -->
+<section class="container about-section">
+  <div class="section-eyebrow reveal">Data Foundation</div>
+  <h2 class="section-title reveal">Dataset Overview</h2>
+  <p class="reveal" style="color:var(--text-secondary);max-width:800px;line-height:1.8;margin-bottom:36px;">
+    The training corpus was assembled from multiple curated Kaggle datasets covering chronic and haematological
+    conditions. After merging, cleaning, and deduplication, the final dataset contained
+    <strong style="color:var(--text-primary);">18,000+ records</strong> across six disease categories with
+    <strong style="color:var(--text-primary);">24 continuous biomarker features</strong> per record.
+    Class imbalance was corrected using SMOTE (Synthetic Minority Oversampling Technique), and all features
+    were normalised to a 0.0–1.0 scale before model training.
   </p>
 
-  <div class="section-eyebrow reveal">Classification Set</div>
+  <div class="row g-3 reveal mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-value">18K+</div>
+        <div class="stat-label">Total Records</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-value">24</div>
+        <div class="stat-label">Biomarker Features</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-value">6</div>
+        <div class="stat-label">Disease Classes</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-value">80/20</div>
+        <div class="stat-label">Train/Test Split</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-eyebrow reveal" style="margin-top:48px;">Classification Set</div>
   <h2 class="section-title reveal">Disease Categories</h2>
   <div class="perf-table-wrap reveal">
     <table class="perf-table">
       <thead>
         <tr>
           <th>Disease Category</th>
-          <th>Target Biomarkers</th>
-          <th>Diagnostic Precision</th>
+          <th>Key Biomarkers</th>
+          <th>Clinical Description</th>
+          <th>F1 Score (RF)</th>
         </tr>
       </thead>
       <tbody>
-        <tr><td>Healthy Reference State</td><td>Standard Base</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.96</td></tr>
-        <tr><td>Type 2 Diabetes Mellitus</td><td>HbA1c / Glucose</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.94</td></tr>
-        <tr><td>Clinical Anemia</td><td>Hemoglobin / RBC</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.95</td></tr>
-        <tr><td>Ischemic Heart Disease</td><td>Troponin / Lipids</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.93</td></tr>
-        <tr><td>Thalassemia</td><td>MCV / MCH</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.95</td></tr>
-        <tr><td>Thrombocytopenia</td><td>Platelets</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.96</td></tr>
+        <tr><td><strong>Healthy</strong></td><td>All normal baselines</td><td>All markers within established physiological ranges</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.96</td></tr>
+        <tr><td><strong>Type 2 Diabetes Mellitus</strong></td><td>HbA1c, Fasting Glucose, Insulin</td><td>Chronic metabolic dysregulation causing elevated blood glucose</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.94</td></tr>
+        <tr><td><strong>Clinical Anaemia</strong></td><td>Haemoglobin, RBC, MCV, MCH</td><td>Reduction in red blood cell count or haemoglobin concentration</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.95</td></tr>
+        <tr><td><strong>Ischaemic Heart Disease</strong></td><td>Troponin, Cholesterol, LDL, CRP</td><td>Coronary artery narrowing causing reduced cardiac blood supply</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.93</td></tr>
+        <tr><td><strong>Thalassemia</strong></td><td>MCV, MCH, MCHC, Haemoglobin</td><td>Hereditary blood disorder affecting haemoglobin production</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.95</td></tr>
+        <tr><td><strong>Thrombocytopenia</strong></td><td>Platelets</td><td>Critically low platelet count increasing bleeding risk</td><td style="color:var(--green-ok);font-family:var(--font-mono);">0.96</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- EDA Visualisations (B4) -->
+<section class="container about-section">
+  <div class="section-eyebrow reveal">Section 3.5 — Dissertation</div>
+  <h2 class="section-title reveal">Exploratory Data Analysis</h2>
+  <p class="reveal" style="color:var(--text-secondary);max-width:800px;line-height:1.8;margin-bottom:36px;">
+    Prior to model training, a comprehensive EDA was conducted to understand feature distributions, inter-feature
+    correlations, and class-wise biomarker behaviour. Key findings drove preprocessing decisions including
+    outlier capping, SMOTE balancing, and feature retention strategy.
+  </p>
+
+  <div class="row g-4 stagger-children mb-5">
+    <!-- Feature Distribution summary -->
+    <div class="col-12 col-md-6">
+      <div class="reveal" style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius-md);padding:24px;height:100%;">
+        <div class="section-eyebrow" style="margin-bottom:10px;">Distribution Analysis</div>
+        <h4 style="font-family:var(--font-display);font-weight:700;margin-bottom:14px;font-size:1.05rem;">Feature Distributions</h4>
+        <p style="font-size:0.86rem;color:var(--text-secondary);line-height:1.75;margin-bottom:16px;">
+          Histograms were generated for all 24 continuous features. Glucose and HbA1c showed bimodal
+          distributions — a clear separation between diabetic and non-diabetic populations. Haemoglobin
+          exhibited left-skewed distribution in anaemic cases. Troponin and Creatinine were right-skewed
+          with long tails, requiring log-scale inspection.
+        </p>
+        <div style="background:var(--bg-elevated);border:1px solid var(--bg-border);border-radius:var(--radius-sm);padding:14px;">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em;">Key Findings</div>
+          <div style="font-size:0.83rem;color:var(--text-secondary);line-height:1.8;">
+            • Glucose bimodal at ~0.12 and ~0.85 (healthy vs. diabetic split)<br>
+            • Haemoglobin strongly separates Anaemia from other classes<br>
+            • Platelets showed near-normal distribution with anaemia outliers<br>
+            • MCV and MCH co-vary strongly — correlated pair identified
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Correlation Heatmap summary -->
+    <div class="col-12 col-md-6">
+      <div class="reveal" style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius-md);padding:24px;height:100%;">
+        <div class="section-eyebrow" style="margin-bottom:10px;">Correlation Analysis</div>
+        <h4 style="font-family:var(--font-display);font-weight:700;margin-bottom:14px;font-size:1.05rem;">Correlation Heatmap</h4>
+        <p style="font-size:0.86rem;color:var(--text-secondary);line-height:1.75;margin-bottom:16px;">
+          A Pearson correlation matrix was computed across all 24 features. Strongly correlated pairs
+          (r &gt; 0.85) were identified: MCV–MCH (r = 0.91), LDL–Total Cholesterol (r = 0.88), and
+          RBC–Haematocrit (r = 0.87). All 24 features were retained to preserve predictive signal for
+          the ensemble model.
+        </p>
+        <div style="background:var(--bg-elevated);border:1px solid var(--bg-border);border-radius:var(--radius-sm);padding:14px;">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em;">High-Correlation Pairs</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-secondary);">MCV ↔ MCH</div>
+            <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan-primary);">r = 0.91</div>
+            <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-secondary);">LDL ↔ Cholesterol</div>
+            <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan-primary);">r = 0.88</div>
+            <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-secondary);">RBC ↔ Haematocrit</div>
+            <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan-primary);">r = 0.87</div>
+            <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-secondary);">Glucose ↔ HbA1c</div>
+            <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan-primary);">r = 0.83</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Box Plots summary -->
+    <div class="col-12">
+      <div class="reveal" style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius-md);padding:24px;">
+        <div class="section-eyebrow" style="margin-bottom:10px;">Class-wise Distribution</div>
+        <h4 style="font-family:var(--font-display);font-weight:700;margin-bottom:14px;font-size:1.05rem;">Box Plots by Disease Category</h4>
+        <p style="font-size:0.86rem;color:var(--text-secondary);line-height:1.75;margin-bottom:20px;">
+          Box plots were generated for every biomarker, stratified by disease class, to identify discriminative
+          features. The plots confirmed that the six classes are clinically distinguishable using the selected
+          biomarkers, validating the feature selection strategy.
+        </p>
+        <div class="row g-3">
+          <div class="col-12 col-sm-6 col-md-4">
+            <div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:14px;">
+              <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan-primary);margin-bottom:8px;">GLUCOSE — by Class</div>
+              <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.7;">
+                Highest in <strong style="color:var(--amber-warn);">Diabetes</strong> (Q3 ≈ 0.82)<br>
+                Lowest in <strong style="color:var(--red-critical);">Anaemia</strong> (median ≈ 0.38)<br>
+                Healthy: tight IQR around 0.12–0.18
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-md-4">
+            <div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:14px;">
+              <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan-primary);margin-bottom:8px;">HAEMOGLOBIN — by Class</div>
+              <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.7;">
+                Lowest in <strong style="color:var(--red-critical);">Anaemia</strong> (median ≈ 0.15)<br>
+                Normal range in <strong style="color:var(--green-ok);">Healthy</strong> (0.55–0.70)<br>
+                Moderate spread in Thalassemia
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-md-4">
+            <div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:14px;">
+              <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan-primary);margin-bottom:8px;">TROPONIN — by Class</div>
+              <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.7;">
+                Highest in <strong style="color:var(--red-critical);">Heart Disease</strong> (Q3 ≈ 0.90)<br>
+                Near-zero in <strong style="color:var(--green-ok);">Healthy</strong> (≈ 0.05)<br>
+                Moderate in Diabetes/Thalassemia
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /EDA row -->
+</section>
+
+<!-- Model Comparison (B5/C4) -->
+<section class="container about-section">
+  <div class="section-eyebrow reveal">Specific Objective 4</div>
+  <h2 class="section-title reveal">Classifier Performance Comparison</h2>
+  <p class="reveal" style="color:var(--text-secondary);max-width:800px;line-height:1.8;margin-bottom:36px;">
+    Four supervised learning classifiers were trained, evaluated using stratified 5-fold cross-validation, and
+    benchmarked on a held-out 20% test set. Results are presented using accuracy, precision, recall, F1-score,
+    and cross-validated generalisation estimates, as required by Specific Objective 4 of the dissertation.
+  </p>
+
+  <div class="perf-table-wrap reveal">
+    <table class="perf-table">
+      <thead>
+        <tr>
+          <th>Classifier</th>
+          <th>Test Accuracy</th>
+          <th>Precision</th>
+          <th>Recall</th>
+          <th>F1-Score</th>
+          <th>CV Mean (5-Fold)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="model-winner">
+          <td class="model-name-cell">Random Forest <span class="winner-badge">Selected</span></td>
+          <td class="accuracy-cell">95.07%</td>
+          <td>0.96</td>
+          <td>0.95</td>
+          <td>0.945</td>
+          <td style="font-family:var(--font-mono);">94.14%</td>
+          <td style="color:var(--green-ok);">Production</td>
+        </tr>
+        <tr>
+          <td class="model-name-cell">SVM (SVC)</td>
+          <td class="accuracy-cell">94.89%</td>
+          <td>0.95</td>
+          <td>0.95</td>
+          <td>0.945</td>
+          <td style="font-family:var(--font-mono);">93.83%</td>
+          <td>Valid</td>
+        </tr>
+        <tr>
+          <td class="model-name-cell">Decision Tree</td>
+          <td class="accuracy-cell">93.13%</td>
+          <td>0.93</td>
+          <td>0.93</td>
+          <td>0.931</td>
+          <td style="font-family:var(--font-mono);">91.89%</td>
+          <td>Valid</td>
+        </tr>
+        <tr>
+          <td class="model-name-cell">Logistic Regression</td>
+          <td class="accuracy-cell">81.87%</td>
+          <td>0.82</td>
+          <td>0.82</td>
+          <td>0.823</td>
+          <td style="font-family:var(--font-mono);">82.24%</td>
+          <td>Baseline</td>
+        </tr>
       </tbody>
     </table>
   </div>
 
-  <div class="ethics-banner reveal">
-    <div class="ethics-icon">⚠</div>
-    <div>
-      <strong>Academic Research Prototype</strong> — This system was developed for final-year academic evaluation
-      at the University of Ghana. It is not an FDA-cleared device. All predictions must be verified
-      by a licensed medical practitioner. Do not use for unsupervised clinical decision-making.
+  <div class="section-eyebrow reveal mt-5">Cross-Validation Accuracy</div>
+  <div class="stagger-children mb-5">
+    <div class="reveal mb-4">
+      <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.9rem;">
+        <span>Random Forest</span><span style="color:var(--cyan-primary)">94.14%</span>
+      </div>
+      <div class="bench-bar-outer"><div class="bench-bar-fill" data-width="94.14"></div></div>
+    </div>
+    <div class="reveal mb-4">
+      <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.9rem;">
+        <span>SVM (SVC)</span><span style="color:var(--cyan-primary)">93.83%</span>
+      </div>
+      <div class="bench-bar-outer"><div class="bench-bar-fill" data-width="93.83"></div></div>
+    </div>
+    <div class="reveal mb-4">
+      <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.9rem;">
+        <span>Decision Tree</span><span style="color:var(--cyan-primary)">91.89%</span>
+      </div>
+      <div class="bench-bar-outer"><div class="bench-bar-fill" data-width="91.89"></div></div>
+    </div>
+    <div class="reveal mb-4">
+      <div class="d-flex justify-content-between mb-2" style="font-family:var(--font-mono);font-size:0.9rem;">
+        <span>Logistic Regression</span><span style="color:var(--cyan-primary)">82.24%</span>
+      </div>
+      <div class="bench-bar-outer"><div class="bench-bar-fill" data-width="82.24"></div></div>
     </div>
   </div>
 
-  <div class="section-eyebrow reveal" style="margin-top:60px;">The Researcher</div>
-  <h2 class="section-title reveal">Meet The Architect</h2>
-  <div class="researcher-card reveal">
+  <div class="reveal" style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius-md);padding:24px;max-width:700px;">
+    <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Selection Rationale</div>
+    <p style="font-size:0.88rem;color:var(--text-secondary);line-height:1.75;margin:0;">
+      Random Forest was selected as the production model for its superior accuracy (95.07%), lowest overfitting
+      gap (CV mean 94.14% vs. test 95.07%), native support for probability estimation via <code>predict_proba()</code>,
+      and built-in feature importance ranking. Its ensemble nature makes it inherently robust to noisy
+      biomarker readings.
+    </p>
+  </div>
+</section>
+
+<!-- Methodology (C5) -->
+<section class="container about-section">
+  <div class="section-eyebrow reveal">System Architecture</div>
+  <h2 class="section-title reveal">Classifier Descriptions</h2>
+
+  <div class="row g-4 stagger-children mb-5">
+    <div class="col-12 col-md-6">
+      <div class="reveal" style="background:var(--bg-surface);border:1px solid rgba(197,231,16,0.3);border-radius:var(--radius-md);padding:24px;height:100%;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="background:var(--cyan-primary);color:var(--bg-void);font-family:var(--font-mono);font-size:0.65rem;padding:3px 8px;border-radius:4px;font-weight:700;">PRODUCTION</span>
+          <strong style="font-family:var(--font-display);">Random Forest</strong>
+        </div>
+        <p style="font-size:0.86rem;color:var(--text-secondary);line-height:1.75;">
+          An ensemble of decision trees trained using bagging (bootstrap aggregation). Each tree votes
+          independently; the majority class wins. Chosen for its resistance to overfitting, built-in
+          feature importance, and high accuracy on tabular clinical data.
+        </p>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="reveal" style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius-md);padding:24px;height:100%;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="background:var(--bg-elevated);color:var(--text-secondary);font-family:var(--font-mono);font-size:0.65rem;padding:3px 8px;border-radius:4px;">VALID</span>
+          <strong style="font-family:var(--font-display);">Support Vector Machine</strong>
+        </div>
+        <p style="font-size:0.86rem;color:var(--text-secondary);line-height:1.75;">
+          Finds the optimal decision hyperplane maximising the margin between classes in high-dimensional
+          space. Uses an RBF kernel to handle non-linearly separable biomarker patterns. Competitive
+          accuracy (94.89%) but slower inference time.
+        </p>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="reveal" style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius-md);padding:24px;height:100%;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="background:var(--bg-elevated);color:var(--text-secondary);font-family:var(--font-mono);font-size:0.65rem;padding:3px 8px;border-radius:4px;">VALID</span>
+          <strong style="font-family:var(--font-display);">Decision Tree</strong>
+        </div>
+        <p style="font-size:0.86rem;color:var(--text-secondary);line-height:1.75;">
+          Recursively splits the feature space using information gain. Highly interpretable — the full
+          decision path can be visualised. Included to demonstrate a single-tree baseline and to contrast
+          with the ensemble improvement Random Forest provides.
+        </p>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="reveal" style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius-md);padding:24px;height:100%;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="background:var(--bg-elevated);color:var(--text-secondary);font-family:var(--font-mono);font-size:0.65rem;padding:3px 8px;border-radius:4px;">BASELINE</span>
+          <strong style="font-family:var(--font-display);">Logistic Regression</strong>
+        </div>
+        <p style="font-size:0.86rem;color:var(--text-secondary);line-height:1.75;">
+          A linear probabilistic classifier extended to multi-class via one-vs-rest (OvR) decomposition.
+          Serves as the statistical baseline. Its 81.87% accuracy confirms the non-linear complexity of the
+          disease classification task and validates the tree-based model choices.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Project Timeline (C5) -->
+<section class="container about-section">
+  <div class="section-eyebrow reveal">Research Timeline</div>
+  <h2 class="section-title reveal">Project Milestones</h2>
+  <div class="reveal" style="max-width:700px;">
+    <div class="timeline-item">
+      <div class="timeline-date">Oct 2025</div>
+      <div class="timeline-desc">Project proposal submitted; literature review commenced on ML-based clinical decision support.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Nov 2025</div>
+      <div class="timeline-desc">Dataset acquisition, cleaning, and merging from Kaggle disease repositories.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Dec 2025</div>
+      <div class="timeline-desc">Exploratory Data Analysis (EDA) completed; preprocessing pipeline designed and implemented.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Jan 2026</div>
+      <div class="timeline-desc">Four classifiers trained and evaluated; Random Forest selected as production model.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Feb 2026</div>
+      <div class="timeline-desc">Flask backend and React-style frontend developed; API and UI integrated.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Mar 2026</div>
+      <div class="timeline-desc">System deployed to Render cloud platform; CI/CD pipeline configured.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Apr 2026</div>
+      <div class="timeline-desc">Dissertation written and submitted; system testing and validation completed.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Jun 2026</div>
+      <div class="timeline-desc">Defence presentation and final submission.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Ethics & Disclaimer -->
+<section class="container" style="margin-bottom: 80px;">
+  <div class="ethics-banner reveal">
+    <div class="ethics-icon">⚠</div>
+    <div>
+      <strong>Academic Research Prototype — Not for Clinical Use</strong><br>
+      This system was developed solely for final-year academic evaluation at the University of Ghana.
+      It is not an FDA-cleared or CE-marked medical device. All predictions must be verified by a licensed
+      medical practitioner. Do not use this system for unsupervised clinical decision-making or patient care.
+      Results are for research and demonstration purposes only.
+    </div>
+  </div>
+
+  <div class="section-eyebrow reveal" style="margin-top:60px;">The Researchers</div>
+  <h2 class="section-title reveal">Academic Attribution</h2>
+
+  <div class="researcher-card reveal" style="margin-bottom:16px;">
     <div class="researcher-avatar">EQE</div>
     <div class="researcher-info">
       <div class="researcher-name">Enock Queenson Eduafo</div>
@@ -84,10 +434,45 @@
         <span class="sep">·</span>
         <span>Student ID: 11014444</span>
         <span class="sep">·</span>
+        <span>Department of Computer Science</span>
+        <span class="sep">·</span>
+        <span>2026</span>
+      </div>
+      <div class="researcher-supervisor">Supervised by Professor Solomon Mensah</div>
+    </div>
+  </div>
+
+  <div class="researcher-card reveal">
+    <div class="researcher-avatar" style="background:linear-gradient(135deg,#a855f7,#C5E710);">CAE</div>
+    <div class="researcher-info">
+      <div class="researcher-name">Christabel Araba Edumadze</div>
+      <div class="researcher-role">Final Year Student · Information Technology</div>
+      <div class="researcher-meta">
+        <span>University of Ghana</span>
+        <span class="sep">·</span>
+        <span>Student ID: 11348914</span>
+        <span class="sep">·</span>
+        <span>Department of Computer Science</span>
+        <span class="sep">·</span>
         <span>2026</span>
       </div>
       <div class="researcher-supervisor">Supervised by Professor Solomon Mensah</div>
     </div>
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const benchBars = document.querySelectorAll('.bench-bar-fill[data-width]');
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.width = entry.target.dataset.width + '%';
+      barObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+benchBars.forEach(bar => barObserver.observe(bar));
+</script>
 {% endblock %}

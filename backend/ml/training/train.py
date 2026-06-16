@@ -1,6 +1,6 @@
 """
 Smart Health Sync — ML Training Pipeline
-Author: Enock Queenson Eduafo | University of Ghana 2026
+Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana 2026
 
 Handles data loading, preprocessing, model selection, training, 
 evaluation, and persistence of model artefacts.
@@ -134,7 +134,7 @@ class TrainingPipeline:
         summary = {
             'metadata': {
                 'trained_at': datetime.utcnow().isoformat(),
-                'author': 'Enock Queenson Eduafo',
+                'author': 'Enock Queenson Eduafo & Christabel Araba Edumadze',
                 'features': FEATURES
             },
             'best_model': best_model['name'],

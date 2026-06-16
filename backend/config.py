@@ -1,6 +1,6 @@
 """
 Smart Health Sync — Centralised Configuration
-Author: Enock Queenson Eduafo | University of Ghana 2026
+Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana 2026
 """
 
 import os

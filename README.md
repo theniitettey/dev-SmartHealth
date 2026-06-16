@@ -251,13 +251,18 @@ curl http://localhost:5000/api/health/models
 
 ---
 
-## Author
+## Authors
 
 **Enock Queenson Eduafo**  
 Student ID: 11014444  
 BSc Information Technology — University of Ghana (2026)  
 Supervisor: Professor Solomon Mensah
 
+**Christabel Araba Edumadze**  
+Student ID: 11348914  
+BSc Information Technology — University of Ghana (2026)  
+Supervisor: Professor Solomon Mensah
+
 ---
 
-© 2026 Enock Queenson Eduafo — Smart Health Sync. All rights reserved.
+© 2026 Enock Queenson Eduafo & Christabel Araba Edumadze — Smart Health Sync. All rights reserved.

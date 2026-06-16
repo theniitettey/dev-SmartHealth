@@ -593,6 +593,7 @@ body {
 /* Submit Button */
 .submit-btn {
   width: 100%;
+  max-width: 420px;
   background: linear-gradient(135deg, var(--cyan-primary) 0%, var(--cyan-dim) 100%);
   color: var(--bg-void);
   font-family: var(--font-display);
@@ -874,3 +875,305 @@ body {
 @supports (-webkit-touch-callout: none) {
   body { background-attachment: scroll; }
 }
+
+/* ── Cold Start Overlay (A1) ──────────────────────────────────── */
+#cold-start-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg-void);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  transition: opacity 0.6s ease;
+}
+#cold-start-overlay.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+.cold-start-logo {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+.cold-start-logo span { color: var(--cyan-primary); }
+.cold-start-spinner {
+  width: 44px; height: 44px;
+  border: 3px solid var(--bg-border);
+  border-top-color: var(--cyan-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  box-shadow: 0 0 24px var(--cyan-glow);
+}
+.cold-start-msg {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.7;
+}
+.cold-start-sub {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--bg-border);
+  letter-spacing: 0.04em;
+}
+
+/* ── Clinical Unit Badge (A5/B2) ──────────────────────────────── */
+.input-unit-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--cyan-dim);
+  margin-bottom: 5px;
+  letter-spacing: 0.04em;
+}
+.clinical-ref-range {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  padding: 3px 7px;
+  background: rgba(197,231,16,0.03);
+  border-left: 2px solid var(--bg-border);
+  border-radius: 0 3px 3px 0;
+  line-height: 1.5;
+}
+.bm-clinical-name {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+.biomarker-input.invalid {
+  border-color: var(--red-critical) !important;
+  box-shadow: 0 0 0 3px rgba(255,71,87,0.15) !important;
+}
+.field-error-msg {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  color: var(--red-critical);
+  margin-top: 4px;
+  display: none;
+}
+.field-error-msg.visible { display: block; }
+
+/* ── Feature Importance Chart (A4/C1) ────────────────────────── */
+.feature-importance-section {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--bg-border);
+}
+.fi-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--cyan-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+.fi-row { margin-bottom: 12px; }
+.fi-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+.fi-pct { color: var(--cyan-primary); font-weight: 600; }
+.fi-bar-outer { height: 5px; background: var(--bg-border); border-radius: 3px; overflow: hidden; }
+.fi-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--cyan-primary), var(--purple-neural));
+  width: 0%;
+  transition: width 1s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Disclaimer Banner (B3) ──────────────────────────────────── */
+.result-disclaimer {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: rgba(244,223,107,0.05);
+  border: 1px solid rgba(244,223,107,0.25);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 0.80rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-top: 24px;
+}
+.result-disclaimer-icon { color: var(--amber-warn); font-size: 1rem; flex-shrink: 0; padding-top: 1px; }
+.result-disclaimer strong { color: var(--amber-warn); display: block; margin-bottom: 3px; }
+
+/* ── Confidence Display Enhancement (A3/B1) ─────────────────── */
+.confidence-value-large {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--cyan-primary);
+  line-height: 1;
+}
+.confidence-label-small {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+.result-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+/* ── Print Result Card (C2) ──────────────────────────────────── */
+.print-result-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--bg-border);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  width: 100%;
+  justify-content: center;
+  margin-top: 20px;
+  letter-spacing: 0.04em;
+}
+.print-result-btn:hover {
+  border-color: var(--cyan-primary);
+  color: var(--cyan-primary);
+  background: rgba(197,231,16,0.04);
+}
+/* screen: hide the print card completely */
+@media screen {
+  #print-result-card { display: none; }
+}
+
+/* ── Print: show ONLY the result card ───────────────────────── */
+@media print {
+  /* 1. White out the page */
+  html, body {
+    background: #fff !important;
+    background-image: none !important;
+    color: #111 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 2. Explicitly hide every page chrome element */
+  #cold-start-overlay,
+  .navbar,
+  nav,
+  .page-header,
+  #predictionForm,
+  .normalization-notice,
+  .data-info-strip,
+  .preset-strip,
+  .form-section-header,
+  .biomarker-group-title,
+  .result-panel,
+  .site-footer,
+  footer,
+  canvas,
+  #bg-pulse {
+    display: none !important;
+  }
+
+  /* 3. Strip containers of their dark styles */
+  main, section, .container, .predict-main {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* 4. Show and style the print card */
+  #print-result-card {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    padding: 28px 36px !important;
+    margin: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    font-family: Georgia, 'Times New Roman', serif !important;
+    font-size: 11pt !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* 5. Print-card internal styles */
+  .prc-header       { border-bottom: 2px solid #111; padding-bottom: 10px; margin-bottom: 16px; }
+  .prc-logo         { font-size: 17pt; font-weight: bold; font-family: Arial, sans-serif; }
+  .prc-ref          { font-size: 8.5pt; color: #555; font-family: monospace; margin-top: 3px; }
+  .prc-diagnosis    { font-size: 21pt; font-weight: bold; margin: 12px 0 3px; }
+  .prc-conf         { font-size: 12pt; color: #333; margin-bottom: 10px; }
+  .prc-conf-bar     { height: 7px; background: #eee; border-radius: 4px; margin-bottom: 14px; }
+  .prc-conf-fill    { height: 100%; background: #2e7d32; border-radius: 4px; }
+  .prc-section-title {
+    font-size: 9.5pt; font-weight: bold; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #555; border-bottom: 1px solid #ddd;
+    padding-bottom: 3px; margin: 14px 0 8px; font-family: Arial, sans-serif;
+  }
+  .prc-fi-row       { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+  .prc-fi-label     { width: 200px; font-size: 9pt; font-family: monospace; color: #333; }
+  .prc-fi-bar-outer { flex: 1; height: 5px; background: #ddd; border-radius: 3px; }
+  .prc-fi-bar-fill  { height: 100%; background: #1565c0; border-radius: 3px; }
+  .prc-fi-pct       { width: 38px; font-size: 9pt; font-family: monospace; text-align: right; color: #333; }
+  .prc-disclaimer   {
+    background: #fff8e1; border: 1px solid #f9a825;
+    padding: 9px 12px; border-radius: 4px;
+    font-size: 8.5pt; color: #555; line-height: 1.65; margin-top: 14px;
+  }
+  .prc-footer       {
+    border-top: 1px solid #ddd; margin-top: 16px; padding-top: 8px;
+    font-size: 8pt; color: #777; font-family: Arial, sans-serif;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;
+  }
+}
+
+/* ── Expanded About Page (C5) ────────────────────────────────── */
+.about-section { padding: 60px 0; border-top: 1px solid var(--bg-border); }
+.eda-chart-placeholder {
+  background: var(--bg-surface);
+  border: 1px dashed var(--bg-border);
+  border-radius: var(--radius-md);
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--bg-border);
+}
+.timeline-date {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--cyan-primary);
+  white-space: nowrap;
+  min-width: 90px;
+}
+.timeline-desc { font-size: 0.88rem; color: var(--text-secondary); }

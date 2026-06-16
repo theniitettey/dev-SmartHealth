@@ -1,6 +1,6 @@
 /**
  * Smart Health Sync - Results Page JavaScript
- * Author: Enock Queenson Eduafo
+ * Authors: Enock Queenson Eduafo & Christabel Araba Edumadze
  */
 
 document.addEventListener('DOMContentLoaded', () => {

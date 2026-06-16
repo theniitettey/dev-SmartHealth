@@ -1,10 +1,10 @@
 # ── Smart Health Sync — Docker Image ─────────────────────────
-# Author: Enock Queenson Eduafo | University of Ghana 2026
+# Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana 2026
 
 FROM python:3.11-slim
 
 # Metadata
-LABEL maintainer="Enock Queenson Eduafo <11014444@ug.edu.gh>"
+LABEL maintainer="Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana"
 LABEL description="Smart Health Sync — AI-Powered Clinical Diagnostic Platform"
 LABEL version="2.0.0"
 

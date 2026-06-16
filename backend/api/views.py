@@ -1,6 +1,6 @@
 """
 Smart Health Sync — HTML Page Views Blueprint
-Author: Enock Queenson Eduafo | University of Ghana 2026
+Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana 2026
 """
 
 from flask import Blueprint, render_template, request

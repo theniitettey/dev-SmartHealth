@@ -1,6 +1,6 @@
 """
 Smart Health Sync — Professional Model Manager
-Author: Enock Queenson Eduafo | University of Ghana 2026
+Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana 2026
 
 Handles model discovery, loading, validation, caching, and inference
 with robust path resolution for local and cloud environments.
@@ -347,17 +347,34 @@ class ModelManager:
                     lbl = self.classes[idx] if idx < len(self.classes) else str(idx)
                     probabilities[lbl] = round(float(p) * 100, 2)
 
+        # ── Feature Importance ───────────────────────────────────
+        feature_importance = {}
+        if hasattr(model, "feature_importances_"):
+            importances = model.feature_importances_
+            total_importance = float(np.sum(importances))
+            if total_importance > 0:
+                pairs = sorted(
+                    zip(self.features, importances),
+                    key=lambda x: x[1],
+                    reverse=True,
+                )[:5]
+                feature_importance = {
+                    name: round((float(imp) / total_importance) * 100, 1)
+                    for name, imp in pairs
+                }
+
         return {
-            "prediction":    pred_label,
-            "confidence":    round(confidence, 2),
-            "probabilities": probabilities,
-            "description":   CLASS_DESCRIPTIONS.get(pred_label, "Diagnostic data under clinical review."),
-            "recommendations": (
+            "prediction":        pred_label,
+            "confidence":        round(confidence, 2),
+            "probabilities":     probabilities,
+            "feature_importance": feature_importance,
+            "description":       CLASS_DESCRIPTIONS.get(pred_label, "Diagnostic data under clinical review."),
+            "recommendations":   (
                 CLASS_RECOMMENDATIONS.get(pred_label, []) + GENERIC_RECOMMENDATIONS
             ),
-            "model_used":    model_key,
-            "fallback_used": fallback_used,
-            "status":        "success",
+            "model_used":        model_key,
+            "fallback_used":     fallback_used,
+            "status":            "success",
         }
 
     # ── Helpers ──────────────────────────────────────────────

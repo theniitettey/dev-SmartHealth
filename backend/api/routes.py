@@ -1,6 +1,6 @@
 """
 Smart Health Sync — API Routes (RESTful endpoints)
-Author: Enock Queenson Eduafo | University of Ghana 2026
+Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana 2026
 """
 
 import logging
@@ -140,8 +140,8 @@ def metadata():
         "project":   "Smart Health Sync",
         "version":   "2.0.0",
         "developer": {
-            "name":        "Enock Queenson Eduafo",
-            "student_id":  "11014444",
+            "names":       "Enock Queenson Eduafo & Christabel Araba Edumadze",
+            "student_ids": "11014444 & 11348914",
             "institution": "University of Ghana",
             "supervisor":  "Professor Solomon Mensah",
             "year":        "2026",

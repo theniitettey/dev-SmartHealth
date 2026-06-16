@@ -1,6 +1,6 @@
 # ── Docker Compose ────────────────────────────────────────────
 # Smart Health Sync — Multi-service Docker setup
-# Author: Enock Queenson Eduafo | University of Ghana 2026
+# Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana 2026
 
 version: "3.9"
 

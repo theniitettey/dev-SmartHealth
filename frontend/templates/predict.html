@@ -6,15 +6,15 @@
     <div class="page-eyebrow">Diagnosis Engine</div>
     <h1 class="page-title">Run Clinical Prediction</h1>
     <p class="page-desc">
-      Input the patient's biological markers from laboratory screenings. All 24 fields
-      are required for reliable diagnostic predictions.
+      Input the patient's biological markers from laboratory screenings. All 24 biomarker fields
+      are required. Values are entered as normalised scores (0.0 = clinical minimum, 1.0 = clinical maximum).
     </p>
   </div>
 </section>
 
 <section class="predict-main">
   <div class="container">
-    <form id="predictionForm">
+    <form id="predictionForm" novalidate>
 
       <!-- 01 — Select Classifier -->
       <div class="form-section-header">
@@ -71,7 +71,11 @@
 
       <div class="normalization-notice reveal">
         <span>ℹ</span>
-        <div>All 24 markers are pre-normalized to a 0.00–1.00 scale before model inference.</div>
+        <div>
+          Enter values as <strong>normalised biomarker scores (0.00–1.00)</strong>, where 0.00 represents the
+          clinical minimum and 1.00 the clinical maximum for each marker. Clinical reference ranges are shown
+          below each field for guidance. Use presets above to load example profiles.
+        </div>
       </div>
 
       <!-- 03 — Biomarkers -->
@@ -83,166 +87,362 @@
       <!-- Metabolic Indices -->
       <div class="biomarker-group-title reveal">Metabolic Indices</div>
       <div class="row g-3 mb-4 stagger-children">
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Glucose</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Glucose" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Fasting Glucose</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">mg/dL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-Glucose"
+                   data-feature="Glucose" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal fasting: 70–100 mg/dL · Normal ≈ 0.05–0.14</div>
+            <div class="field-error-msg" id="err-Glucose">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Insulin</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Insulin" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Insulin</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">µIU/mL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-Insulin"
+                   data-feature="Insulin" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Fasting normal: 2–25 µIU/mL · Normal ≈ 0.05–0.20</div>
+            <div class="field-error-msg" id="err-Insulin">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>BMI</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="BMI" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">BMI</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">kg/m² · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-BMI"
+                   data-feature="BMI" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Healthy: 18.5–24.9 kg/m² · Normal ≈ 0.14–0.25</div>
+            <div class="field-error-msg" id="err-BMI">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>HbA1c</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="HbA1c" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">HbA1c</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">% · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-HbA1c"
+                   data-feature="HbA1c" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: &lt;5.7% · Pre-diabetic: 5.7–6.4%</div>
+            <div class="field-error-msg" id="err-HbA1c">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
-      </div>
+
+      </div><!-- /Metabolic -->
 
       <!-- Cardiovascular Metrics -->
       <div class="biomarker-group-title reveal">Cardiovascular Metrics</div>
       <div class="row g-3 mb-4 stagger-children">
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Cholesterol</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Cholesterol" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Total Cholesterol</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">mg/dL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-Cholesterol"
+                   data-feature="Cholesterol" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Desirable: &lt;200 mg/dL · Borderline: 200–239</div>
+            <div class="field-error-msg" id="err-Cholesterol">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>LDL Cholesterol</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="LDL Cholesterol" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">LDL Cholesterol</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">mg/dL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-LDL"
+                   data-feature="LDL Cholesterol" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Optimal: &lt;100 mg/dL · High: &gt;160 mg/dL</div>
+            <div class="field-error-msg" id="err-LDL">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>HDL Cholesterol</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="HDL Cholesterol" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">HDL Cholesterol</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">mg/dL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-HDL"
+                   data-feature="HDL Cholesterol" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Low risk: &gt;60 mg/dL · Low: &lt;40 mg/dL (M)</div>
+            <div class="field-error-msg" id="err-HDL">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Triglycerides</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Triglycerides" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Triglycerides</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">mg/dL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-Triglycerides"
+                   data-feature="Triglycerides" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: &lt;150 mg/dL · High: 200–499 mg/dL</div>
+            <div class="field-error-msg" id="err-Triglycerides">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Systolic BP</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Systolic Blood Pressure" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Systolic BP</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">mmHg · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-SBP"
+                   data-feature="Systolic Blood Pressure" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: &lt;120 mmHg · Stage 2 HTN: ≥140 mmHg</div>
+            <div class="field-error-msg" id="err-SBP">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Diastolic BP</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Diastolic Blood Pressure" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Diastolic BP</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">mmHg · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-DBP"
+                   data-feature="Diastolic Blood Pressure" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: &lt;80 mmHg · Stage 2 HTN: ≥90 mmHg</div>
+            <div class="field-error-msg" id="err-DBP">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Heart Rate</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Heart Rate" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Heart Rate</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">bpm · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-HR"
+                   data-feature="Heart Rate" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal resting: 60–100 bpm</div>
+            <div class="field-error-msg" id="err-HR">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Troponin</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Troponin" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Troponin</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">ng/mL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-Troponin"
+                   data-feature="Troponin" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: &lt;0.04 ng/mL · Elevated suggests MI</div>
+            <div class="field-error-msg" id="err-Troponin">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
-      </div>
+
+      </div><!-- /Cardiovascular -->
 
       <!-- Hematology -->
       <div class="biomarker-group-title reveal">Hematology</div>
       <div class="row g-3 mb-4 stagger-children">
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Hemoglobin</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Hemoglobin" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Haemoglobin</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">g/dL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-Hemoglobin"
+                   data-feature="Hemoglobin" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 12.0–17.5 g/dL · Anaemia: &lt;12 (F), &lt;13.5 (M)</div>
+            <div class="field-error-msg" id="err-Hemoglobin">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Platelets</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Platelets" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Platelets</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">×10³/µL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-Platelets"
+                   data-feature="Platelets" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 150–400 ×10³/µL · Thrombocytopenia: &lt;150</div>
+            <div class="field-error-msg" id="err-Platelets">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>White Blood Cells</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="White Blood Cells" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">White Blood Cells</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">×10³/µL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-WBC"
+                   data-feature="White Blood Cells" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 4.5–11.0 ×10³/µL</div>
+            <div class="field-error-msg" id="err-WBC">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Red Blood Cells</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Red Blood Cells" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Red Blood Cells</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">×10⁶/µL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-RBC"
+                   data-feature="Red Blood Cells" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 4.1–5.9 ×10⁶/µL</div>
+            <div class="field-error-msg" id="err-RBC">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Hematocrit</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Hematocrit" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Haematocrit</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">% · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-Hematocrit"
+                   data-feature="Hematocrit" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 35.5–48.6%</div>
+            <div class="field-error-msg" id="err-Hematocrit">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>MCV</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Mean Corpuscular Volume" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">MCV</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">fL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-MCV"
+                   data-feature="Mean Corpuscular Volume" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 80–100 fL · Low MCV suggests iron deficiency</div>
+            <div class="field-error-msg" id="err-MCV">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>MCH</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Mean Corpuscular Hemoglobin" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">MCH</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">pg · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-MCH"
+                   data-feature="Mean Corpuscular Hemoglobin" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 27–33 pg</div>
+            <div class="field-error-msg" id="err-MCH">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>MCHC</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Mean Corpuscular Hemoglobin Concentration" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">MCHC</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">g/dL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-MCHC"
+                   data-feature="Mean Corpuscular Hemoglobin Concentration" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 32–36 g/dL</div>
+            <div class="field-error-msg" id="err-MCHC">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
-      </div>
+
+      </div><!-- /Hematology -->
 
       <!-- Liver & Kidney -->
-      <div class="biomarker-group-title reveal">Liver &amp; Kidney</div>
+      <div class="biomarker-group-title reveal">Liver &amp; Kidney Function</div>
       <div class="row g-3 mb-4 stagger-children">
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>ALT</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="ALT" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">ALT</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">U/L · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-ALT"
+                   data-feature="ALT" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 7–56 U/L</div>
+            <div class="field-error-msg" id="err-ALT">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>AST</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="AST" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">AST</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">U/L · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-AST"
+                   data-feature="AST" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 10–40 U/L</div>
+            <div class="field-error-msg" id="err-AST">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>Creatinine</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="Creatinine" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">Creatinine</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">mg/dL · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-Creatinine"
+                   data-feature="Creatinine" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: 0.5–1.2 mg/dL</div>
+            <div class="field-error-msg" id="err-Creatinine">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
+
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
-            <label class="input-label"><span>CRP</span><span class="input-range-hint">0.0–1.0</span></label>
-            <input type="number" step="0.01" class="biomarker-input" data-feature="C-reactive Protein" value="0.5" min="0" max="1">
+            <label class="input-label">
+              <span class="bm-clinical-name">CRP</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">mg/L · normalised score</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-CRP"
+                   data-feature="C-reactive Protein" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: &lt;10 mg/L · High risk: &gt;3.0 mg/L (cardiac)</div>
+            <div class="field-error-msg" id="err-CRP">Enter a value between 0.0 and 1.0</div>
           </div>
         </div>
-      </div>
+
+      </div><!-- /Liver & Kidney -->
 
       <button type="submit" class="submit-btn" id="submitBtn">
         <span class="btn-spinner"></span>
@@ -252,26 +452,101 @@
 
     <!-- Result Panel -->
     <div class="result-panel" id="resultsPanel" style="display:none;">
+
+      <!-- Diagnosis + Confidence (A3/B1) -->
       <div class="result-header">
-        <div class="result-diagnosis" id="diagnosisName">Searching...</div>
-        <div class="result-confidence" id="confidencePercent">Confidence: 0%</div>
+        <div>
+          <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Predicted Diagnosis</div>
+          <div class="result-diagnosis" id="diagnosisName">—</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="confidence-value-large" id="confidenceLarge">—</div>
+          <div class="confidence-label-small">Confidence Score</div>
+          <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);margin-top:3px;" id="modelUsedLabel"></div>
+        </div>
       </div>
-      <div class="confidence-bar"><div class="confidence-fill" id="confidenceBar"></div></div>
-      <p class="result-description" id="diagnosisDescription" style="color:var(--text-secondary);margin-bottom:20px;line-height:1.6;font-size:0.9rem;">
+
+      <div class="confidence-bar">
+        <div class="confidence-fill" id="confidenceBar"></div>
+      </div>
+
+      <p class="result-description" id="diagnosisDescription"
+         style="color:var(--text-secondary);margin-bottom:20px;line-height:1.6;font-size:0.9rem;">
         Clinical analysis will appear here.
       </p>
-      <div class="form-section-header">
-        <h3 class="form-section-title" style="font-size:0.8rem;">Weighted Probabilities</h3>
+
+      <!-- Feature Importance Chart (A4/C1) -->
+      <div class="feature-importance-section" id="featureImportanceSection" style="display:none;">
+        <div class="fi-title">Top Predictive Biomarkers — Feature Importance</div>
+        <div id="fiChartContainer"></div>
+      </div>
+
+      <!-- Probability Table -->
+      <div class="form-section-header" style="margin-top:24px;">
+        <h3 class="form-section-title" style="font-size:0.8rem;">Weighted Class Probabilities</h3>
       </div>
       <table class="prob-table" id="probTable"></table>
+
+      <!-- Clinical Advice -->
       <div class="form-section-header" style="margin-top:28px;">
-        <h3 class="form-section-title" style="font-size:0.8rem;">Clinical Advice</h3>
+        <h3 class="form-section-title" style="font-size:0.8rem;">Clinical Recommendations</h3>
       </div>
       <ul id="clinicalAdvice" style="color:var(--text-secondary);font-size:0.85rem;padding-left:20px;line-height:1.8;"></ul>
-      <button class="btn-outline" style="width:100%;margin-top:28px;justify-content:center;" onclick="window.print()">
-        Print Medical Report
+
+      <!-- Disclaimer (B3) -->
+      <div class="result-disclaimer">
+        <div class="result-disclaimer-icon">⚠</div>
+        <div>
+          <strong>Research Prototype — Not for Clinical Use</strong>
+          This output is generated by an academic machine learning prototype developed for a final-year
+          Computer Science dissertation at the University of Ghana. It must not be used as the basis for
+          any clinical decision, diagnosis, or treatment without evaluation by a qualified healthcare
+          professional. Always consult a licensed medical practitioner for formal medical advice.
+        </div>
+      </div>
+
+      <!-- Print Button (C2) -->
+      <button class="print-result-btn" id="printBtn" onclick="preparePrintCard()">
+        ⎙ &nbsp; Print / Save Result Card as PDF
       </button>
+
+    </div><!-- /result-panel -->
+
+    <!-- Hidden Print-only Result Card (C2) — results & advice only -->
+    <div id="print-result-card">
+      <div class="prc-header">
+        <div class="prc-logo">⬡ Smart Health Sync</div>
+        <div class="prc-ref" id="prc-ref"></div>
+      </div>
+
+      <div class="prc-section-title">Predicted Diagnosis</div>
+      <div class="prc-diagnosis" id="prc-diagnosis">—</div>
+      <div class="prc-conf" id="prc-conf">Confidence: —</div>
+      <div class="prc-conf-bar"><div class="prc-conf-fill" id="prc-conf-fill" style="width:0%"></div></div>
+
+      <div class="prc-section-title">Clinical Description</div>
+      <div id="prc-desc" style="font-size:9pt;color:#333;line-height:1.65;margin-bottom:4px;"></div>
+
+      <div class="prc-section-title">Top Contributing Biomarkers</div>
+      <div id="prc-fi-rows"></div>
+
+      <div class="prc-section-title">Clinical Recommendations</div>
+      <ul id="prc-advice" style="font-size:9pt;color:#333;line-height:1.8;padding-left:18px;margin:0;"></ul>
+
+      <div class="prc-disclaimer">
+        <strong>⚠ Research Prototype — Not for Clinical Use.</strong> This result was generated by
+        an academic machine learning prototype (Smart Health Sync v2.0) developed for a final-year
+        dissertation at the University of Ghana. It must not be used for clinical decision-making
+        without evaluation by a qualified healthcare professional. Always consult a licensed medical
+        practitioner.
+      </div>
+
+      <div class="prc-footer">
+        <div>Enock Queenson Eduafo (11014444) &amp; Christabel Araba Edumadze (11348914) · Supervisor: Prof. Solomon Mensah</div>
+        <div>University of Ghana, Dept. of Computer Science · 2026</div>
+      </div>
     </div>
+
   </div>
 </section>
 {% endblock %}
