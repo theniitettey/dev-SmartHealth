@@ -14,12 +14,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Custom Theme (loads after Bootstrap so it wins) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=7">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=8">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}?v=5">
 
   {% block head %}{% endblock %}
 </head>
 <body>
+
+  <!-- Cold start overlay (A1) — shows immediately, hides once page is interactive -->
+  <div id="cold-start-overlay">
+    <div class="cold-start-logo">⬡ Smart Health <span>Sync</span></div>
+    <div class="cold-start-spinner"></div>
+    <div class="cold-start-msg">System initialising, please wait…<br>This may take 30–60 s on first load.</div>
+    <div class="cold-start-sub">Render free-tier cold start</div>
+  </div>
 
   <nav class="navbar navbar-expand-md" id="navbar">
     <div class="container">
@@ -111,5 +119,25 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
   {% block scripts %}{% endblock %}
+
+  <script>
+    (function () {
+      var overlay = document.getElementById('cold-start-overlay');
+      if (!overlay) return;
+      function dismissOverlay() {
+        overlay.classList.add('fade-out');
+        setTimeout(function () { overlay.style.display = 'none'; }, 650);
+      }
+      if (document.readyState === 'complete') {
+        dismissOverlay();
+      } else {
+        window.addEventListener('load', dismissOverlay);
+        // Fallback: ping the API health endpoint to detect server readiness
+        fetch('/api/health').then(dismissOverlay).catch(function () {
+          // Server still cold — overlay will dismiss on load event
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
