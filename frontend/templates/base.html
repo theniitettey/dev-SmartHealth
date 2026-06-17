@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Custom Theme (loads after Bootstrap so it wins) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=10">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=11">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}?v=5">
 
   {% block head %}{% endblock %}
@@ -124,19 +124,30 @@
     (function () {
       var overlay = document.getElementById('cold-start-overlay');
       if (!overlay) return;
+
+      // Only show overlay on fresh sessions (not on every page nav)
+      var seen = sessionStorage.getItem('shs_warm');
+      if (seen) { overlay.style.display = 'none'; return; }
+
+      var dismissed = false;
       function dismissOverlay() {
+        if (dismissed) return;
+        dismissed = true;
+        sessionStorage.setItem('shs_warm', '1');
         overlay.classList.add('fade-out');
         setTimeout(function () { overlay.style.display = 'none'; }, 650);
       }
-      if (document.readyState === 'complete') {
-        dismissOverlay();
-      } else {
-        window.addEventListener('load', dismissOverlay);
-        // Fallback: ping the API health endpoint to detect server readiness
-        fetch('/api/health').then(dismissOverlay).catch(function () {
-          // Server still cold — overlay will dismiss on load event
-        });
+
+      // Poll /api/health until server responds, then dismiss
+      function ping() {
+        fetch('/api/health')
+          .then(function (r) { if (r.ok) dismissOverlay(); else setTimeout(ping, 3000); })
+          .catch(function () { setTimeout(ping, 3000); });
       }
+      ping();
+
+      // Hard cap — dismiss after 90 s regardless
+      setTimeout(dismissOverlay, 90000);
     })();
   </script>
 </body>
