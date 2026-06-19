@@ -261,6 +261,24 @@ function showResult(result) {
     const descEl = document.getElementById('diagnosisDescription');
     if (descEl) descEl.textContent = result.description || '';
 
+    // Explanations (Why This Prediction Was Made)
+    const expSection = document.getElementById('explanationSection');
+    const expList = document.getElementById('clinicalExplanations');
+    if (expSection && expList) {
+        expList.innerHTML = '';
+        const exps = result.explanations || [];
+        if (exps.length > 0) {
+            exps.forEach(exp => {
+                const li = document.createElement('li');
+                li.textContent = exp;
+                expList.appendChild(li);
+            });
+            expSection.style.display = 'block';
+        } else {
+            expSection.style.display = 'none';
+        }
+    }
+
     // Feature Importance chart (A4/C1)
     renderFeatureImportance(result.feature_importance || {});
 
@@ -356,6 +374,26 @@ function preparePrintCard() {
     // Clinical description
     const descEl = document.getElementById('prc-desc');
     if (descEl) descEl.textContent = _lastResult.description || '';
+
+    // Explanations for print card
+    const prcTitle = document.getElementById('prc-explanation-title');
+    const prcExps = document.getElementById('prc-explanations');
+    if (prcTitle && prcExps) {
+        prcExps.innerHTML = '';
+        const exps = _lastResult.explanations || [];
+        if (exps.length > 0) {
+            exps.forEach(exp => {
+                const li = document.createElement('li');
+                li.textContent = exp;
+                prcExps.appendChild(li);
+            });
+            prcTitle.style.display = 'block';
+            prcExps.style.display = 'block';
+        } else {
+            prcTitle.style.display = 'none';
+            prcExps.style.display = 'none';
+        }
+    }
 
     // Feature importance rows
     const fiRows = document.getElementById('prc-fi-rows');
