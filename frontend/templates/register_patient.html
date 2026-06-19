@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="container auth-split-section">
+  <div class="row align-items-center g-5">
+    <div class="col-12 col-md-6 d-none d-md-block">
+      <div class="reveal">
+        <div class="page-eyebrow">Patient Portal</div>
+        <h1 class="page-title text-start" style="font-size:3rem;line-height:1.1;margin-bottom:20px;">
+          Your Personal<br><span class="title-accent">Health Records</span>
+        </h1>
+        <p style="color:var(--text-secondary);max-width:480px;line-height:1.75;">
+          Create a patient account to securely view diagnosis reports, explainable AI summaries, and downloadable health records linked by your physician.
+        </p>
+        <ul class="auth-feature-list">
+          <li><i class="fa-solid fa-circle-check"></i> Instant account activation</li>
+          <li><i class="fa-solid fa-circle-check"></i> View linked diagnosis history</li>
+          <li><i class="fa-solid fa-circle-check"></i> Download printable reports</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+      <div class="auth-container reveal" style="max-width:100%;margin:0;">
+        <h2 class="auth-title text-start" style="margin-bottom:6px;font-size:1.6rem;">Patient Registration</h2>
+        <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:20px;">No verification required — start using your portal immediately.</p>
+
+        <div id="registerAlert" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="patientRegisterForm">
+          <input type="hidden" name="account_type" value="patient">
+
+          <div class="auth-form-group">
+            <label for="fullName" class="auth-label">Full Name *</label>
+            <input type="text" id="fullName" name="full_name" class="auth-input" placeholder="Your full name" required>
+          </div>
+          <div class="auth-form-group">
+            <label for="email" class="auth-label">Email Address *</label>
+            <input type="email" id="email" name="email" class="auth-input" placeholder="you@email.com" required>
+          </div>
+          <div class="auth-form-group">
+            <label for="password" class="auth-label">Password *</label>
+            <input type="password" id="password" name="password" class="auth-input" placeholder="Minimum 8 characters" required minlength="8">
+          </div>
+          <div class="auth-form-group">
+            <label for="dateOfBirth" class="auth-label">Date of Birth *</label>
+            <input type="date" id="dateOfBirth" name="date_of_birth" class="auth-input" required>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="auth-form-group" style="margin-bottom:0;">
+                <label for="gender" class="auth-label">Gender</label>
+                <select id="gender" name="gender" class="auth-input">
+                  <option value="">Optional</option>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="auth-form-group" style="margin-bottom:0;">
+                <label for="bloodGroup" class="auth-label">Blood Group</label>
+                <select id="bloodGroup" name="blood_group" class="auth-input">
+                  <option value="">Optional</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="auth-btn" id="registerBtn" style="margin-top:20px;">
+            <span class="btn-spinner"></span>
+            <span class="btn-text">Create Patient Account</span>
+          </button>
+        </form>
+
+        <div class="auth-links text-start">
+          <p style="color:var(--text-secondary);margin-bottom:4px;">
+            <a href="/register/doctor">Register as doctor</a> · <a href="/login">Sign in</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("patientRegisterForm");
+    const btn = document.getElementById("registerBtn");
+    const alertBox = document.getElementById("registerAlert");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        alertBox.classList.add("d-none");
+
+        if (document.getElementById("password").value.length < 8) {
+            alertBox.textContent = "Password must be at least 8 characters.";
+            alertBox.classList.remove("d-none");
+            return;
+        }
+
+        btn.disabled = true;
+        try {
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                body: new FormData(form)
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alertBox.textContent = data.error || "Registration failed.";
+                alertBox.classList.remove("d-none");
+                btn.disabled = false;
+                return;
+            }
+            window.location.href = "/portal";
+        } catch (err) {
+            alertBox.textContent = "Network error. Please try again.";
+            alertBox.classList.remove("d-none");
+            btn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}
