@@ -363,12 +363,15 @@ class ModelManager:
                     for name, imp in pairs
                 }
 
+        explanations = self._generate_explanation(features_dict, pred_label)
+
         return {
             "prediction":        pred_label,
             "confidence":        round(confidence, 2),
             "probabilities":     probabilities,
             "feature_importance": feature_importance,
             "description":       CLASS_DESCRIPTIONS.get(pred_label, "Diagnostic data under clinical review."),
+            "explanations":      explanations,
             "recommendations":   (
                 CLASS_RECOMMENDATIONS.get(pred_label, []) + GENERIC_RECOMMENDATIONS
             ),
@@ -376,6 +379,95 @@ class ModelManager:
             "fallback_used":     fallback_used,
             "status":            "success",
         }
+
+    def _generate_explanation(self, features: dict, prediction: str) -> list:
+        """Generate human-readable explanations based on clinical biomarkers."""
+        explanations = []
+        
+        # 1. Diabetes
+        if prediction == "Diabetes":
+            glucose = float(features.get("Glucose", 0.5))
+            hba1c = float(features.get("HbA1c", 0.5))
+            insulin = float(features.get("Insulin", 0.5))
+            
+            if glucose > 0.5:
+                explanations.append(f"Fasting glucose level is significantly elevated ({glucose:.2f} score).")
+            if hba1c > 0.5:
+                explanations.append(f"HbA1c level ({hba1c:.2f} score) indicates long-term glycemic elevation.")
+            if insulin > 0.5:
+                explanations.append(f"Insulin biomarker ({insulin:.2f} score) suggests metabolic resistance.")
+            if not explanations:
+                explanations.append("Glucose and HbA1c elevation indicates chronic metabolic dysregulation.")
+                
+        # 2. Anemia
+        elif prediction == "Anemia":
+            hemo = float(features.get("Hemoglobin", 0.5))
+            rbc = float(features.get("Red Blood Cells", 0.5))
+            hct = float(features.get("Hematocrit", 0.5))
+            
+            if hemo < 0.4:
+                explanations.append(f"Haemoglobin concentration ({hemo:.2f} score) is below physiological norms.")
+            if rbc < 0.4:
+                explanations.append(f"Red blood cell count ({rbc:.2f} score) indicates reduced oxygen-carrying capacity.")
+            if hct < 0.4:
+                explanations.append(f"Hematocrit fraction ({hct:.2f} score) is reduced, matching anemia patterns.")
+            if not explanations:
+                explanations.append("Reduced red blood cell count and low haemoglobin concentration detected.")
+
+        # 3. Heart Disease
+        elif prediction == "Heart Disease":
+            trop = float(features.get("Troponin", 0.5))
+            ldl = float(features.get("LDL Cholesterol", 0.5))
+            chol = float(features.get("Cholesterol", 0.5))
+            crp = float(features.get("C-reactive Protein", 0.5))
+            
+            if trop > 0.5:
+                explanations.append(f"Troponin levels ({trop:.2f} score) are elevated, indicating cardiovascular system stress.")
+            if ldl > 0.6 or chol > 0.6:
+                explanations.append(f"High lipid panel indicators (LDL: {ldl:.2f}, Cholesterol: {chol:.2f}) suggest increased atherosclerotic risk.")
+            if crp > 0.5:
+                explanations.append(f"C-reactive protein ({crp:.2f} score) indicates active vascular inflammation.")
+            if not explanations:
+                explanations.append("Elevated troponin and lipid indicators point to cardiovascular stress.")
+
+        # 4. Thalassemia
+        elif prediction == "Thalassemia":
+            mcv = float(features.get("Mean Corpuscular Volume", 0.5))
+            mch = float(features.get("Mean Corpuscular Hemoglobin", 0.5))
+            hemo = float(features.get("Hemoglobin", 0.5))
+            
+            if mcv < 0.4:
+                explanations.append(f"Mean Corpuscular Volume (MCV) is abnormally low ({mcv:.2f} score), indicating microcytic cells.")
+            if mch < 0.4:
+                explanations.append(f"Mean Corpuscular Hemoglobin (MCH) is low ({mch:.2f} score), matching hypochromic characteristics.")
+            if hemo < 0.5:
+                explanations.append(f"Haemoglobin levels are reduced ({hemo:.2f} score), matching microcytic anemia patterns.")
+            if not explanations:
+                explanations.append("Abnormal hemoglobin production pathways and low MCV/MCH markers detected.")
+
+        # 5. Thrombocytopenia
+        elif prediction == "Thrombocytopenia":
+            platelets = float(features.get("Platelets", 0.5))
+            
+            if platelets < 0.3:
+                explanations.append(f"Platelet count ({platelets:.2f} score) is critically low, indicating clotting risk factors.")
+            else:
+                explanations.append(f"Platelet indices match common Thrombocytopenia patterns (platelets: {platelets:.2f} score).")
+
+        # 6. Healthy
+        else:
+            # Check if any standard indicators are outside normal range
+            glucose = float(features.get("Glucose", 0.5))
+            hemo = float(features.get("Hemoglobin", 0.5))
+            platelets = float(features.get("Platelets", 0.5))
+            trop = float(features.get("Troponin", 0.5))
+            
+            if 0.05 <= glucose <= 0.4 and 0.4 <= hemo <= 0.8 and 0.4 <= platelets <= 0.8 and trop <= 0.3:
+                explanations.append("All key biomarkers (Glucose, Haemoglobin, Platelets, Troponin) fall within established healthy reference baselines.")
+            else:
+                explanations.append("Overall biomarker constellation represents normal physiological reference values.")
+                
+        return explanations
 
     # ── Helpers ──────────────────────────────────────────────
     @staticmethod

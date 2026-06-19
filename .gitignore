@@ -51,3 +51,6 @@ build/
 !models/*.joblib
 !models/*.onnx
 !models/*.json
+
+
+/frontend/static/uploads/*

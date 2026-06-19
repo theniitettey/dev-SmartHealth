@@ -17,11 +17,21 @@ class User(db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
-    role = db.Column(db.String(20), default='provider')  # admin, provider
+    role = db.Column(db.String(20), default='provider')  # admin, doctor, patient
+    full_name = db.Column(db.String(120), nullable=True)
+    hospital = db.Column(db.String(120), nullable=True)
+    specialization = db.Column(db.String(120), nullable=True)
+    proof_filename = db.Column(db.String(256), nullable=True)
+    status = db.Column(db.String(20), default='pending')  # approved, pending, rejected
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    records = db.relationship('DiagnosticRecord', backref='author', lazy='dynamic')
+    records = db.relationship(
+        'DiagnosticRecord',
+        backref='author',
+        lazy='dynamic',
+        foreign_keys='DiagnosticRecord.user_id',
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -31,10 +41,11 @@ class User(db.Model):
 
 
 class Patient(db.Model):
-    """Patient records for clinical history."""
+    """Patient profile linked to a registered patient user account."""
     __tablename__ = 'patients'
     
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, unique=True, index=True)
     patient_uuid = db.Column(db.String(36), unique=True, nullable=False, index=True)
     first_name = db.Column(db.String(64), nullable=False)
     last_name = db.Column(db.String(64), nullable=False)
@@ -43,8 +54,13 @@ class Patient(db.Model):
     blood_group = db.Column(db.String(5))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships
-    diagnostic_history = db.relationship('DiagnosticRecord', backref='patient', lazy='dynamic')
+    user = db.relationship('User', backref=db.backref('patient_profile', uselist=False))
+    diagnostic_history = db.relationship(
+        'DiagnosticRecord',
+        backref='patient',
+        lazy='dynamic',
+        foreign_keys='DiagnosticRecord.patient_id',
+    )
 
 
 class DiagnosticRecord(db.Model):
@@ -52,22 +68,28 @@ class DiagnosticRecord(db.Model):
     __tablename__ = 'diagnostic_records'
     
     id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    
-    # Biomarker snapshot (stored as JSON for flexibility, or individual columns if strict)
-    # Using individual columns for strictly typed clinical data as requested
-    glucose = db.Column(db.Float)
-    cholesterol = db.Column(db.Float)
-    hemoglobin = db.Column(db.Float)
-    platelets = db.Column(db.Float)
-    # ... and others (truncated for brevity in a real system, but I'll add the core ones)
-    
-    # Prediction Results
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    patient_reference = db.Column(db.String(64), nullable=True)
+    biomarkers_json = db.Column(db.Text, nullable=True)
+    result_json = db.Column(db.Text, nullable=True)
     prediction_label = db.Column(db.String(64), nullable=False)
     confidence_score = db.Column(db.Float, nullable=False)
-    model_version = db.Column(db.String(20))
+    model_version = db.Column(db.String(32))
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    def to_dict(self):
+        import json
+        return {
+            "id": self.id,
+            "patient_reference": self.patient_reference,
+            "prediction": self.prediction_label,
+            "confidence": self.confidence_score,
+            "model_used": self.model_version,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "biomarkers": json.loads(self.biomarkers_json) if self.biomarkers_json else {},
+            "result": json.loads(self.result_json) if self.result_json else {},
+        }
 
 
 class ModelAuditLog(db.Model):

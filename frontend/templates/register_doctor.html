@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="container auth-split-section">
+  <div class="row align-items-center g-5">
+    <div class="col-12 col-md-6 d-none d-md-block">
+      <div class="reveal">
+        <div class="page-eyebrow">Physician Registration</div>
+        <h1 class="page-title text-start" style="font-size:3rem;line-height:1.1;margin-bottom:20px;">
+          Join as a<br><span class="title-accent">Verified Doctor</span>
+        </h1>
+        <p style="color:var(--text-secondary);max-width:480px;line-height:1.75;">
+          Complete your professional profile and upload credentials. The Super Admin will review your application before diagnostic access is granted.
+        </p>
+        <div class="register-step-hints">
+          <div class="register-step-hint active" data-hint="1">
+            <span class="register-step-num">1</span>
+            <span>Professional details &amp; account credentials</span>
+          </div>
+          <div class="register-step-hint" data-hint="2">
+            <span class="register-step-num">2</span>
+            <span>Upload proof of professionalism</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+      <div class="auth-container reveal" style="max-width:100%;margin:0;">
+        <div class="register-steps-bar">
+          <div class="register-step-dot active" data-step="1">1</div>
+          <div class="register-step-line"></div>
+          <div class="register-step-dot" data-step="2">2</div>
+        </div>
+
+        <h2 class="auth-title text-start" style="margin-bottom:6px;font-size:1.6rem;" id="stepTitle">Step 1 — Your Details</h2>
+        <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:20px;" id="stepSubtitle">Enter your professional and account information.</p>
+
+        <div id="registerAlert" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="doctorRegisterForm" enctype="multipart/form-data">
+          <input type="hidden" name="account_type" value="doctor">
+
+          <div class="register-step-panel active" data-step="1">
+            <div class="auth-form-group">
+              <label for="fullName" class="auth-label">Full Name *</label>
+              <input type="text" id="fullName" name="full_name" class="auth-input" placeholder="Dr. Sophia Mensah" required>
+            </div>
+            <div class="auth-form-group">
+              <label for="email" class="auth-label">Email Address *</label>
+              <input type="email" id="email" name="email" class="auth-input" placeholder="doctor@hospital.org" required>
+            </div>
+            <div class="auth-form-group">
+              <label for="password" class="auth-label">Password *</label>
+              <input type="password" id="password" name="password" class="auth-input" placeholder="Minimum 8 characters" required minlength="8">
+            </div>
+            <div class="auth-form-group">
+              <label for="hospital" class="auth-label">Hospital / Facility</label>
+              <input type="text" id="hospital" name="hospital" class="auth-input" placeholder="Optional">
+            </div>
+            <div class="auth-form-group">
+              <label for="specialization" class="auth-label">Specialization</label>
+              <input type="text" id="specialization" name="specialization" class="auth-input" placeholder="Optional">
+            </div>
+            <button type="button" class="auth-btn" id="nextStepBtn">Continue to Upload <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+
+          <div class="register-step-panel" data-step="2">
+            <div class="auth-form-group">
+              <label class="auth-label">Proof of Professionalism *</label>
+              <p class="auth-field-hint">Medical License, Practicing Certificate, or Certificate of Occupation.</p>
+              <div class="upload-dropzone" id="dragDropZone">
+                <div class="upload-dropzone-empty" id="uploadEmpty">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <p>Drag &amp; drop file here or <span>browse</span></p>
+                  <small>PDF, PNG, JPG, JPEG, DOC, DOCX</small>
+                </div>
+                <div class="upload-preview-wrap" id="uploadPreview" style="display:none;">
+                  <img id="imagePreview" class="upload-image-preview" alt="Document preview" style="display:none;">
+                  <div id="filePreview" class="upload-file-preview" style="display:none;">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span id="filePreviewName"></span>
+                  </div>
+                  <button type="button" class="upload-change-btn" id="changeFileBtn">Change file</button>
+                </div>
+                <input type="file" id="proof" name="proof" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="display:none;">
+              </div>
+            </div>
+            <div class="auth-btn-row">
+              <button type="button" class="auth-btn-outline" id="backStepBtn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button type="submit" class="auth-btn" id="submitBtn">
+                <span class="btn-spinner"></span>
+                <span class="btn-text">Submit Registration</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="auth-links text-start">
+          <p style="color:var(--text-secondary);margin-bottom:4px;">
+            <a href="/register/patient">Register as patient</a> · <a href="/login">Sign in</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("doctorRegisterForm");
+    const stepPanels = document.querySelectorAll(".register-step-panel");
+    const stepDots = document.querySelectorAll(".register-step-dot");
+    const stepHints = document.querySelectorAll(".register-step-hint");
+    const stepTitle = document.getElementById("stepTitle");
+    const stepSubtitle = document.getElementById("stepSubtitle");
+    const alertBox = document.getElementById("registerAlert");
+    const nextBtn = document.getElementById("nextStepBtn");
+    const backBtn = document.getElementById("backStepBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const fileInput = document.getElementById("proof");
+    const dragDropZone = document.getElementById("dragDropZone");
+    const uploadEmpty = document.getElementById("uploadEmpty");
+    const uploadPreview = document.getElementById("uploadPreview");
+    const imagePreview = document.getElementById("imagePreview");
+    const filePreview = document.getElementById("filePreview");
+    const filePreviewName = document.getElementById("filePreviewName");
+    const changeFileBtn = document.getElementById("changeFileBtn");
+    let previewUrl = null;
+    let currentStep = 1;
+
+    function goToStep(step) {
+        currentStep = step;
+        stepPanels.forEach(p => p.classList.toggle("active", parseInt(p.dataset.step) === step));
+        stepDots.forEach(d => d.classList.toggle("active", parseInt(d.dataset.step) === step));
+        stepHints.forEach(h => h.classList.toggle("active", parseInt(h.dataset.hint) === step));
+        if (step === 1) {
+            stepTitle.textContent = "Step 1 — Your Details";
+            stepSubtitle.textContent = "Enter your professional and account information.";
+        } else {
+            stepTitle.textContent = "Step 2 — Upload Credentials";
+            stepSubtitle.textContent = "Upload your professional certificate for verification.";
+        }
+        alertBox.classList.add("d-none");
+    }
+
+    function validateStep1() {
+        const fields = ["fullName", "email", "password"];
+        for (const id of fields) {
+            const el = document.getElementById(id);
+            if (!el.value.trim() || !el.checkValidity()) {
+                el.reportValidity();
+                return false;
+            }
+        }
+        if (document.getElementById("password").value.length < 8) {
+            alertBox.textContent = "Password must be at least 8 characters.";
+            alertBox.classList.remove("d-none");
+            return false;
+        }
+        return true;
+    }
+
+    function clearPreview() {
+        if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+        imagePreview.style.display = "none";
+        filePreview.style.display = "none";
+        imagePreview.src = "";
+        uploadPreview.style.display = "none";
+        uploadEmpty.style.display = "flex";
+    }
+
+    function showPreview(file) {
+        clearPreview();
+        uploadEmpty.style.display = "none";
+        uploadPreview.style.display = "block";
+        const isImage = /^image\/(png|jpe?g)$/i.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
+        if (isImage) {
+            previewUrl = URL.createObjectURL(file);
+            imagePreview.src = previewUrl;
+            imagePreview.style.display = "block";
+        } else {
+            filePreviewName.textContent = file.name;
+            const icon = filePreview.querySelector("i");
+            icon.className = file.name.match(/\.pdf$/i) ? "fa-solid fa-file-pdf" : "fa-solid fa-file-lines";
+            filePreview.style.display = "flex";
+        }
+    }
+
+    function handleFile(file) {
+        if (!file) { clearPreview(); return; }
+        showPreview(file);
+    }
+
+    nextBtn.addEventListener("click", () => {
+        if (validateStep1()) goToStep(2);
+    });
+
+    backBtn.addEventListener("click", () => goToStep(1));
+
+    dragDropZone.addEventListener("click", (e) => {
+        if (e.target.closest("#changeFileBtn")) return;
+        fileInput.click();
+    });
+
+    changeFileBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        fileInput.click();
+    });
+
+    ["dragover", "dragenter"].forEach(evt => {
+        dragDropZone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            dragDropZone.classList.add("drag-over");
+        });
+    });
+    ["dragleave", "drop"].forEach(evt => {
+        dragDropZone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            dragDropZone.classList.remove("drag-over");
+        });
+    });
+
+    dragDropZone.addEventListener("drop", (e) => {
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            handleFile(fileInput.files[0]);
+        }
+    });
+
+    fileInput.addEventListener("change", () => {
+        if (fileInput.files.length) handleFile(fileInput.files[0]);
+        else clearPreview();
+    });
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        alertBox.classList.add("d-none");
+        if (!fileInput.files.length) {
+            alertBox.textContent = "Please upload your proof of professionalism document.";
+            alertBox.classList.remove("d-none");
+            return;
+        }
+        submitBtn.disabled = true;
+        try {
+            const res = await fetch("/api/auth/register", { method: "POST", body: new FormData(form) });
+            const data = await res.json();
+            if (!res.ok) {
+                alertBox.textContent = data.error || "Registration failed.";
+                alertBox.classList.remove("d-none");
+                submitBtn.disabled = false;
+                return;
+            }
+            window.location.href = "/portal";
+        } catch (err) {
+            alertBox.textContent = "Network error. Please try again.";
+            alertBox.classList.remove("d-none");
+            submitBtn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

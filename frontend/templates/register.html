@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="container auth-split-section">
+  <div class="row align-items-center g-5">
+    <div class="col-12 col-md-6 d-none d-md-block">
+      <div class="reveal">
+        <div class="page-eyebrow">Join Smart Health Sync</div>
+        <h1 class="page-title text-start" style="font-size:3rem;line-height:1.1;margin-bottom:20px;">
+          Choose Your<br><span class="title-accent">Account Type</span>
+        </h1>
+        <p style="color:var(--text-secondary);max-width:480px;line-height:1.75;">
+          Register as a verified healthcare professional or as a patient to access your personal health records and diagnosis reports.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+      <div class="auth-container reveal" style="max-width:100%;margin:0;">
+        <h2 class="auth-title text-start" style="margin-bottom:8px;">Create Account</h2>
+        <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:24px;">Select how you will use the platform.</p>
+
+        <a href="/register/doctor" class="register-chooser-card">
+          <div class="register-chooser-icon"><i class="fa-solid fa-user-doctor"></i></div>
+          <div>
+            <div class="register-chooser-title">Doctor / Physician</div>
+            <div class="register-chooser-desc">Register with credentials. Requires Super Admin verification before diagnosis access.</div>
+          </div>
+          <i class="fa-solid fa-arrow-right register-chooser-arrow"></i>
+        </a>
+
+        <a href="/register/patient" class="register-chooser-card">
+          <div class="register-chooser-icon patient"><i class="fa-solid fa-user"></i></div>
+          <div>
+            <div class="register-chooser-title">Patient</div>
+            <div class="register-chooser-desc">Instant access to view linked health records and downloadable diagnosis reports.</div>
+          </div>
+          <i class="fa-solid fa-arrow-right register-chooser-arrow"></i>
+        </a>
+
+        <div class="auth-links text-start">
+          <p style="color:var(--text-secondary);margin-bottom:0;">
+            Already have an account? <a href="/login">Sign in here</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

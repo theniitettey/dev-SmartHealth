@@ -3,9 +3,11 @@ Smart Health Sync — API Routes (RESTful endpoints)
 Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana 2026
 """
 
+import json
 import logging
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 
+from backend.database.models import db, DiagnosticRecord
 from backend.ml.model_manager import model_manager
 
 logger  = logging.getLogger("smarthealth.api")
@@ -58,6 +60,15 @@ def predict():
         Structured prediction with confidence, probabilities, and recommendations.
     """
     try:
+        # Check permissions: must be verified doctor or admin
+        role = session.get("role")
+        status = session.get("status")
+        if role != "admin" and (role != "doctor" or status != "approved"):
+            return jsonify({
+                "error": "Access denied. Diagnostic features require a verified doctor account.",
+                "status": "failed"
+            }), 403
+
         data = request.get_json(force=True, silent=True)
         if not data:
             return jsonify({
@@ -83,7 +94,34 @@ def predict():
             }), 400
 
         model_key = str(data.get("model", "random_forest"))
+        patient_ref = str(data.get("patient_reference", "")).strip() or None
+        linked_patient_id = data.get("patient_id")
         result    = model_manager.predict(features_dict, model_key)
+
+        user_id = session.get("user_id")
+        if user_id:
+            try:
+                record = DiagnosticRecord(
+                    user_id=user_id,
+                    patient_reference=patient_ref,
+                    biomarkers_json=json.dumps(features_dict),
+                    result_json=json.dumps(result),
+                    prediction_label=result["prediction"],
+                    confidence_score=result["confidence"],
+                    model_version=result.get("model_used"),
+                )
+                if linked_patient_id is not None:
+                    from backend.database.models import Patient
+                    patient = Patient.query.get(int(linked_patient_id))
+                    if patient:
+                        record.patient_id = patient.id
+                db.session.add(record)
+                db.session.commit()
+                result["record_id"] = record.id
+            except Exception as db_exc:
+                db.session.rollback()
+                logger.warning(f"[API] Could not persist diagnostic record: {db_exc}")
+
         logger.info(
             f"[API] Prediction: {result['prediction']} | "
             f"confidence={result['confidence']}% | model={result['model_used']}"
@@ -119,6 +157,73 @@ def predict():
         }), 500
 
 
+# ── /api/history ─────────────────────────────────────────────
+@api_bp.route("/history", methods=["GET"])
+def diagnosis_history():
+    """Return diagnosis history for the logged-in user (or all for admin)."""
+    user_id = session.get("user_id")
+    role = session.get("role")
+    if not user_id:
+        return jsonify({"error": "Authentication required."}), 401
+
+    if role == "admin":
+        records = DiagnosticRecord.query.order_by(DiagnosticRecord.created_at.desc()).limit(100).all()
+    elif role == "doctor" and session.get("status") == "approved":
+        records = (
+            DiagnosticRecord.query.filter_by(user_id=user_id)
+            .order_by(DiagnosticRecord.created_at.desc())
+            .limit(100)
+            .all()
+        )
+    elif role == "patient":
+        from backend.database.models import Patient
+        profile = Patient.query.filter_by(user_id=user_id).first()
+        if not profile:
+            records = []
+        else:
+            records = (
+                DiagnosticRecord.query.filter_by(patient_id=profile.id)
+                .order_by(DiagnosticRecord.created_at.desc())
+                .limit(100)
+                .all()
+            )
+    else:
+        return jsonify({"error": "Access denied."}), 403
+
+    return jsonify({
+        "status": "success",
+        "records": [r.to_dict() for r in records],
+    }), 200
+
+
+# ── /api/history/<id> ────────────────────────────────────────
+@api_bp.route("/history/<int:record_id>", methods=["GET"])
+def diagnosis_record(record_id):
+    """Return a single diagnosis record."""
+    user_id = session.get("user_id")
+    role = session.get("role")
+    if not user_id:
+        return jsonify({"error": "Authentication required."}), 401
+
+    record = DiagnosticRecord.query.get(record_id)
+    if not record:
+        return jsonify({"error": "Record not found."}), 404
+
+    if role == "admin":
+        pass
+    elif role == "doctor" and record.user_id == user_id:
+        pass
+    elif role == "patient":
+        from backend.database.models import Patient
+        profile = Patient.query.filter_by(user_id=user_id).first()
+        if not profile or record.patient_id != profile.id:
+            return jsonify({"error": "Access denied."}), 403
+    else:
+        return jsonify({"error": "Access denied."}), 403
+
+    return jsonify({"status": "success", "record": record.to_dict()}), 200
+
+
 # ── /api/models ──────────────────────────────────────────────
 @api_bp.route("/models", methods=["GET"])
 def list_models():
@@ -150,6 +255,7 @@ def metadata():
             "/api/health":        "GET  — System health check",
             "/api/health/models": "GET  — ML model health report",
             "/api/predict":       "POST — Clinical diagnostic inference",
+            "/api/history":       "GET  — Diagnosis history",
             "/api/models":        "GET  — Available classifiers",
         },
         "supported_conditions": model_manager.classes,

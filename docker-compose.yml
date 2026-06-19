@@ -18,6 +18,9 @@ services:
       - SECRET_KEY=${SECRET_KEY:-smarthealthsync-docker-secret}
       - LOG_LEVEL=INFO
     volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./main.py:/app/main.py
       - ./models:/app/models:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]

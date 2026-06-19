@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="container" style="position:relative; z-index:2; padding: 100px 0 60px;">
+  <div class="row align-items-center g-5">
+    <!-- Info Panel (Left Side) -->
+    <div class="col-12 col-md-6 d-none d-md-block">
+      <div class="reveal">
+        <div class="page-eyebrow">Clinical Diagnostics</div>
+        <h1 class="page-title text-start" style="font-size:3rem; line-height:1.1; margin-bottom:20px;">
+          Intelligent Clinical<br><span class="title-accent">Decision Support</span>
+        </h1>
+        <p style="color:var(--text-secondary); max-width:480px; line-height:1.75;">
+          Access the secure physician diagnostic portal. Smart Health Sync provides real-time chronic condition predictions from 24 blood biomarkers with explainable clinical rationales.
+        </p>
+        <div style="background:var(--bg-elevated); border:1px solid var(--bg-border); border-radius:var(--radius-md); padding:20px; max-width:440px; margin-top:28px;">
+          <div style="font-family:var(--font-mono); font-size:0.75rem; color:var(--cyan-primary); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">
+            <span class="badge-dot" style="margin-right:8px; display:inline-block;"></span>Safety Standards
+          </div>
+          <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+            Account access is restricted to verified healthcare professionals. Credentials must be approved by the Super Admin before diagnostic features are unlocked.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Box (Right Side) -->
+    <div class="col-12 col-md-6">
+      <div class="auth-container reveal" style="max-width:100%; margin:0;">
+        <h2 class="auth-title text-start" style="margin-bottom:20px;">Log In</h2>
+        
+        <div id="loginAlert" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="loginForm">
+          <div class="auth-form-group">
+            <label for="email" class="auth-label">Email Address</label>
+            <input type="email" id="email" class="auth-input" placeholder="doctor@facility.org" required>
+          </div>
+
+          <div class="auth-form-group">
+            <label for="password" class="auth-label">Password</label>
+            <input type="password" id="password" class="auth-input" placeholder="••••••••" required>
+          </div>
+
+          <button type="submit" class="auth-btn" id="loginBtn">
+            <span class="btn-spinner"></span>
+            <span class="btn-text">Sign In</span>
+          </button>
+        </form>
+
+        <div class="auth-links text-start">
+          <p style="color:var(--text-secondary); margin-bottom:4px;">
+            <a href="/register/doctor">Register as doctor</a> · <a href="/register/patient">Register as patient</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("loginForm");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const btn = document.getElementById("loginBtn");
+    const alertBox = document.getElementById("loginAlert");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        alertBox.classList.add("d-none");
+        
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        btn.disabled = true;
+        btn.querySelector(".btn-spinner").style.display = "block";
+        btn.querySelector(".btn-text").style.opacity = "0.7";
+
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                alertBox.textContent = data.error || "Login failed. Please check your credentials.";
+                alertBox.classList.remove("d-none");
+                btn.disabled = false;
+                btn.querySelector(".btn-spinner").style.display = "none";
+                btn.querySelector(".btn-text").style.opacity = "1";
+                return;
+            }
+
+            // Redirect to Portal dashboard
+            window.location.href = "/portal";
+        } catch (err) {
+            alertBox.textContent = "Network error: Could not reach the authentication server.";
+            alertBox.classList.remove("d-none");
+            btn.disabled = false;
+            btn.querySelector(".btn-spinner").style.display = "none";
+            btn.querySelector(".btn-text").style.opacity = "1";
+        }
+    });
+});
+</script>
+{% endblock %}

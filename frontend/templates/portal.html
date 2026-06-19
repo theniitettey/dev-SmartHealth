@@ -1,0 +1,682 @@
+{% extends "portal_base.html" %}
+
+{% block dashboard_content %}
+
+{% if session.get('role') == 'admin' %}
+
+  {# ── ADMIN: DASHBOARD ── #}
+  {% if section == 'dashboard' %}
+  <div class="dash-stats-grid">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-user-doctor"></i></div>
+      <div class="dash-stat-value">{{ stats.total_doctors }}</div>
+      <div class="dash-stat-label">Registered Doctors</div>
+    </div>
+    <div class="dash-stat-card warn">
+      <div class="dash-stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+      <div class="dash-stat-value">{{ stats.pending_count }}</div>
+      <div class="dash-stat-label">Pending Verification</div>
+    </div>
+    <div class="dash-stat-card ok">
+      <div class="dash-stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="dash-stat-value">{{ stats.approved_count }}</div>
+      <div class="dash-stat-label">Verified Doctors</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-notes-medical"></i></div>
+      <div class="dash-stat-value">{{ stats.total_diagnoses }}</div>
+      <div class="dash-stat-label">Total Diagnoses</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-user"></i></div>
+      <div class="dash-stat-value">{{ stats.total_patients }}</div>
+      <div class="dash-stat-label">Registered Patients</div>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-12 col-lg-7">
+      <div class="portal-card">
+        <div class="portal-section-title"><i class="fa-solid fa-clock"></i> Recent Verification Requests</div>
+        {% set pending_docs = doctors | selectattr('status', 'equalto', 'pending') | list %}
+        {% if pending_docs %}
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Name</th><th>Email</th><th>Facility</th><th>Action</th></tr></thead>
+              <tbody>
+                {% for doc in pending_docs[:5] %}
+                <tr>
+                  <td>{{ doc.full_name }}</td>
+                  <td>{{ doc.email }}</td>
+                  <td>{{ doc.hospital or "—" }}</td>
+                  <td><a href="/portal?section=verification" class="btn-action-verify btn-approve">Review</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="dash-empty"><i class="fa-solid fa-circle-check"></i> No pending verification requests.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-12 col-lg-5">
+      <div class="portal-card">
+        <div class="portal-section-title"><i class="fa-solid fa-heart-pulse"></i> System Status</div>
+        <div class="dash-status-item">
+          <span>API Service</span>
+          <span class="status-badge status-approved">Online</span>
+        </div>
+        <div class="dash-status-item">
+          <span>ML Models Loaded</span>
+          <span class="status-badge {% if health and health.loaded_models %}status-approved{% else %}status-rejected{% endif %}">
+            {{ health.loaded_models | length if health else 0 }} active
+          </span>
+        </div>
+        <div class="dash-status-item">
+          <span>Scaler / Encoder</span>
+          <span class="status-badge status-approved">
+            {% if health and health.scaler_loaded and health.encoder_loaded %}Ready{% else %}Degraded{% endif %}
+          </span>
+        </div>
+        <a href="/portal?section=monitoring" class="btn-outline btn-sm mt-3">View Full Monitoring</a>
+      </div>
+    </div>
+  </div>
+
+  {# ── ADMIN: VERIFICATION ── #}
+  {% elif section == 'verification' %}
+  <div class="portal-card">
+    <div class="portal-section-title"><i class="fa-solid fa-user-shield"></i> Doctor Verification Management</div>
+    <div id="verifyAlert" class="alert d-none" role="alert"></div>
+
+    {% if doctors %}
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Doctor Name</th>
+              <th>Email</th>
+              <th>Facility</th>
+              <th>Specialization</th>
+              <th>Credentials</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in doctors %}
+            <tr id="row-{{ doc.id }}">
+              <td style="font-weight:600;color:var(--text-primary);">{{ doc.full_name }}</td>
+              <td>{{ doc.email }}</td>
+              <td>{{ doc.hospital or "—" }}</td>
+              <td>{{ doc.specialization or "—" }}</td>
+              <td>
+                {% if doc.proof_filename %}
+                  <a href="{{ url_for('static', filename='uploads/' + doc.proof_filename) }}" target="_blank">
+                    <i class="fa-solid fa-file-medical"></i> View Document
+                  </a>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                <span id="status-badge-{{ doc.id }}" class="status-badge status-{{ doc.status }}">{{ doc.status }}</span>
+              </td>
+              <td>
+                <div id="actions-{{ doc.id }}" class="d-flex gap-2 flex-wrap">
+                  {% if doc.status == 'pending' %}
+                    <button onclick="verifyDoctor('{{ doc.id }}', 'approve')" class="btn-action-verify btn-approve">
+                      <i class="fa-solid fa-circle-check"></i> Approve
+                    </button>
+                    <button onclick="verifyDoctor('{{ doc.id }}', 'reject')" class="btn-action-verify btn-reject">
+                      <i class="fa-solid fa-circle-xmark"></i> Reject
+                    </button>
+                  {% else %}
+                    <span class="text-muted" style="font-size:0.8rem;">No action required</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="dash-empty"><i class="fa-solid fa-folder-open"></i> No registered doctors found.</p>
+    {% endif %}
+  </div>
+
+  {# ── ADMIN: USERS ── #}
+  {% elif section == 'users' %}
+  <div class="portal-card">
+    <div class="portal-section-title"><i class="fa-solid fa-users"></i> User Management</div>
+    <div id="userAlert" class="alert d-none" role="alert"></div>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Registered</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for u in all_users %}
+          <tr>
+            <td style="font-weight:600;color:var(--text-primary);">{{ u.full_name or u.username }}</td>
+            <td>{{ u.email }}</td>
+            <td><span class="status-badge status-{{ u.role if u.role in ['approved'] else 'pending' }}">{{ u.role }}</span></td>
+            <td><span class="status-badge status-{{ u.status }}">{{ u.status }}</span></td>
+            <td>{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+            <td>
+              {% if u.role == 'doctor' and u.id != session.get('user_id') %}
+              <select class="auth-input user-status-select" style="width:auto;padding:6px 10px;font-size:0.8rem;" data-user-id="{{ u.id }}" onchange="updateUserStatus(this)">
+                <option value="">Change status…</option>
+                <option value="approved" {% if u.status == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="pending" {% if u.status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="rejected" {% if u.status == 'rejected' %}selected{% endif %}>Rejected</option>
+              </select>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# ── ADMIN: ACCESS CONTROL ── #}
+  {% elif section == 'access' %}
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      <div class="portal-card h-100">
+        <div class="portal-section-title"><i class="fa-solid fa-user-shield"></i> Super Admin Permissions</div>
+        <ul class="access-list">
+          <li><i class="fa-solid fa-check"></i> Verify doctor credentials</li>
+          <li><i class="fa-solid fa-check"></i> Approve or reject registrations</li>
+          <li><i class="fa-solid fa-check"></i> Manage doctors and users</li>
+          <li><i class="fa-solid fa-check"></i> Monitor system activities</li>
+          <li><i class="fa-solid fa-check"></i> Full diagnostic engine access</li>
+          <li><i class="fa-solid fa-check"></i> View all diagnosis history</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="portal-card h-100">
+        <div class="portal-section-title"><i class="fa-solid fa-user-doctor"></i> Doctor Permissions</div>
+        <div class="access-tier">
+          <strong>Verified Doctors</strong>
+          <ul class="access-list">
+            <li><i class="fa-solid fa-check"></i> Enter patient biomarker data</li>
+            <li><i class="fa-solid fa-check"></i> Run disease diagnosis</li>
+            <li><i class="fa-solid fa-check"></i> View AI explanations</li>
+            <li><i class="fa-solid fa-check"></i> Access diagnosis history &amp; reports</li>
+          </ul>
+        </div>
+        <div class="access-tier mt-3">
+          <strong>Unverified Doctors</strong>
+          <ul class="access-list muted">
+            <li><i class="fa-solid fa-check"></i> Log in and view platform info</li>
+            <li><i class="fa-solid fa-check"></i> Manage profile settings</li>
+            <li><i class="fa-solid fa-xmark"></i> Perform diagnoses (locked)</li>
+            <li><i class="fa-solid fa-xmark"></i> Access diagnostic tools (locked)</li>
+          </ul>
+        </div>
+        <div class="access-tier mt-3">
+          <strong>Registered Patients</strong>
+          <ul class="access-list">
+            <li><i class="fa-solid fa-check"></i> View linked health records</li>
+            <li><i class="fa-solid fa-check"></i> Read diagnosis explanations &amp; reports</li>
+            <li><i class="fa-solid fa-check"></i> Manage personal profile</li>
+            <li><i class="fa-solid fa-xmark"></i> Run diagnoses (physician only)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── ADMIN: MONITORING ── #}
+  {% elif section == 'monitoring' %}
+  <div class="dash-stats-grid">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-server"></i></div>
+      <div class="dash-stat-value">{{ health.status | capitalize if health else '—' }}</div>
+      <div class="dash-stat-label">System Health</div>
+    </div>
+    <div class="dash-stat-card ok">
+      <div class="dash-stat-icon"><i class="fa-solid fa-brain"></i></div>
+      <div class="dash-stat-value">{{ health.loaded_models | length if health else 0 }}</div>
+      <div class="dash-stat-label">Models Loaded</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-flask"></i></div>
+      <div class="dash-stat-value">{{ health.feature_count if health else 24 }}</div>
+      <div class="dash-stat-label">Biomarker Features</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+      <div class="dash-stat-value">{{ stats.total_diagnoses }}</div>
+      <div class="dash-stat-label">Diagnoses Run</div>
+    </div>
+  </div>
+
+  <div class="portal-card mt-4">
+    <div class="portal-section-title"><i class="fa-solid fa-microchip"></i> Model Registry Status</div>
+    {% if health %}
+    <div class="dash-status-item"><span>Models Directory</span><span>{{ health.models_directory }}</span></div>
+    <div class="dash-status-item"><span>Loaded Models</span><span>{{ health.loaded_models | join(', ') or 'None' }}</span></div>
+    <div class="dash-status-item"><span>Missing Models</span><span>{{ health.missing_models | join(', ') or 'None' }}</span></div>
+    <div class="dash-status-item"><span>Corrupted Models</span><span>{{ health.corrupted_models | join(', ') or 'None' }}</span></div>
+    {% endif %}
+  </div>
+
+  <div class="portal-card mt-4">
+    <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Diagnostic Activity</div>
+    {% if records %}
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Date</th><th>Prediction</th><th>Confidence</th><th>Model</th></tr></thead>
+          <tbody>
+            {% for r in records[:10] %}
+            <tr>
+              <td>{{ r.created_at.strftime('%d %b %Y, %H:%M') if r.created_at else '—' }}</td>
+              <td>{{ r.prediction_label }}</td>
+              <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
+              <td>{{ r.model_version or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="dash-empty">No diagnostic activity recorded yet.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+{% elif session.get('role') == 'patient' %}
+
+  {# ── PATIENT: DASHBOARD ── #}
+  {% if section == 'dashboard' %}
+  <div class="alert alert-success d-flex align-items-center gap-3 mb-4" style="background:rgba(197,231,16,0.08);border:1px solid rgba(197,231,16,0.3);color:var(--green-ok);">
+    <i class="fa-solid fa-heart-pulse" style="font-size:1.5rem;"></i>
+    <div>
+      <strong>Welcome to your Patient Portal</strong><br>
+      View diagnoses linked to your profile by your healthcare provider. Diagnoses are run by verified physicians only.
+    </div>
+  </div>
+  <div class="dash-stats-grid">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-folder-medical"></i></div>
+      <div class="dash-stat-value">{{ stats.total_records }}</div>
+      <div class="dash-stat-label">Linked Records</div>
+    </div>
+    <div class="dash-stat-card ok">
+      <div class="dash-stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="dash-stat-value">Active</div>
+      <div class="dash-stat-label">Account Status</div>
+    </div>
+    {% if patient_profile %}
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-droplet"></i></div>
+      <div class="dash-stat-value" style="font-size:1rem;">{{ patient_profile.blood_group or '—' }}</div>
+      <div class="dash-stat-label">Blood Group</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-cake-candles"></i></div>
+      <div class="dash-stat-value" style="font-size:1rem;">{{ patient_profile.date_of_birth.strftime('%d %b %Y') }}</div>
+      <div class="dash-stat-label">Date of Birth</div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="portal-card mt-4">
+    <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Health Records</div>
+    {% if records %}
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Date</th><th>Condition</th><th>Confidence</th><th>Details</th></tr></thead>
+          <tbody>
+            {% for r in records[:5] %}
+            <tr>
+              <td>{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</td>
+              <td>{{ r.prediction_label }}</td>
+              <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
+              <td><button class="btn-action-verify btn-approve" onclick="viewRecord({{ r.id }})"><i class="fa-solid fa-eye"></i> View</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="dash-empty"><i class="fa-solid fa-folder-open"></i> No linked health records yet. Records appear here when a verified doctor runs a diagnosis linked to your profile.</p>
+    {% endif %}
+  </div>
+
+  {# ── PATIENT: PROFILE ── #}
+  {% elif section == 'profile' %}
+  <div class="portal-card">
+    <div class="portal-section-title"><i class="fa-solid fa-id-card"></i> My Profile</div>
+    <div class="portal-meta-item"><span class="portal-meta-label">Full Name</span><span class="portal-meta-value">{{ patient_user.full_name }}</span></div>
+    <div class="portal-meta-item"><span class="portal-meta-label">Email</span><span class="portal-meta-value">{{ patient_user.email }}</span></div>
+    {% if patient_profile %}
+    <div class="portal-meta-item"><span class="portal-meta-label">Date of Birth</span><span class="portal-meta-value">{{ patient_profile.date_of_birth.strftime('%d %b %Y') }}</span></div>
+    <div class="portal-meta-item"><span class="portal-meta-label">Gender</span><span class="portal-meta-value">{{ patient_profile.gender or '—' }}</span></div>
+    <div class="portal-meta-item"><span class="portal-meta-label">Blood Group</span><span class="portal-meta-value">{{ patient_profile.blood_group or '—' }}</span></div>
+    <div class="portal-meta-item"><span class="portal-meta-label">Patient ID</span><span class="portal-meta-value" style="font-family:var(--font-mono);font-size:0.8rem;">{{ patient_profile.patient_uuid[:8] }}…</span></div>
+    {% endif %}
+  </div>
+
+  {# ── PATIENT: RECORDS ── #}
+  {% elif section == 'records' %}
+  <div class="portal-card">
+    <div class="portal-section-title"><i class="fa-solid fa-folder-medical"></i> My Health Records</div>
+    {% if records %}
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Date</th><th>Condition</th><th>Confidence</th><th>Model</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for r in records %}
+            <tr>
+              <td>{{ r.created_at.strftime('%d %b %Y, %H:%M') if r.created_at else '—' }}</td>
+              <td><strong style="color:var(--cyan-primary);">{{ r.prediction_label }}</strong></td>
+              <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
+              <td>{{ (r.model_version or '—') | replace('_', ' ') | title }}</td>
+              <td><button class="btn-action-verify btn-approve" onclick="viewRecord({{ r.id }})"><i class="fa-solid fa-eye"></i> Details</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="dash-empty"><i class="fa-solid fa-folder-open"></i> No health records linked to your account yet.</p>
+    {% endif %}
+  </div>
+
+  {# ── PATIENT: REPORTS ── #}
+  {% elif section == 'reports' %}
+  <div class="portal-card">
+    <div class="portal-section-title"><i class="fa-solid fa-file-medical"></i> My Reports</div>
+    {% if records %}
+      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">View and print explainable diagnosis reports from your healthcare provider.</p>
+      <div class="row g-3">
+        {% for r in records %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="report-card">
+            <div class="report-card-date">{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</div>
+            <div class="report-card-diag">{{ r.prediction_label }}</div>
+            <div class="report-card-conf">{{ '%.1f' | format(r.confidence_score) }}% confidence</div>
+            <button class="btn-outline btn-sm w-100 mt-2" onclick="viewRecord({{ r.id }}, true)">
+              <i class="fa-solid fa-print"></i> View &amp; Print Report
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="dash-empty">No reports available yet.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+{% else %}
+
+  {# ── DOCTOR: DASHBOARD ── #}
+  {% if section == 'dashboard' %}
+  {% if doctor.status == 'approved' %}
+  <div class="alert alert-success d-flex align-items-center gap-3 mb-4" style="background:rgba(197,231,16,0.08);border:1px solid rgba(197,231,16,0.3);color:var(--green-ok);">
+    <i class="fa-solid fa-circle-check" style="font-size:1.5rem;"></i>
+    <div><strong>Verification Approved</strong><br>Your credentials are verified. Full diagnostic access is enabled.</div>
+  </div>
+  {% elif doctor.status == 'pending' %}
+  <div class="alert alert-warning d-flex align-items-center gap-3 mb-4" style="background:rgba(244,223,107,0.08);border:1px solid rgba(244,223,107,0.3);color:var(--amber-warn);">
+    <i class="fa-solid fa-circle-exclamation" style="font-size:1.5rem;"></i>
+    <div><strong>Pending Verification</strong><br>Your credentials are under review. Diagnostic features remain locked.</div>
+  </div>
+  {% else %}
+  <div class="alert alert-danger d-flex align-items-center gap-3 mb-4" style="background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.3);color:var(--red-critical);">
+    <i class="fa-solid fa-circle-xmark" style="font-size:1.5rem;"></i>
+    <div><strong>Verification Rejected</strong><br>Please re-upload valid credentials in your Profile section.</div>
+  </div>
+  {% endif %}
+
+  <div class="dash-stats-grid">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-notes-medical"></i></div>
+      <div class="dash-stat-value">{{ stats.total_diagnoses }}</div>
+      <div class="dash-stat-label">Diagnoses Completed</div>
+    </div>
+    <div class="dash-stat-card ok">
+      <div class="dash-stat-icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <div class="dash-stat-value">{{ doctor.status | capitalize }}</div>
+      <div class="dash-stat-label">Account Status</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-hospital"></i></div>
+      <div class="dash-stat-value" style="font-size:1rem;">{{ doctor.hospital or 'Not set' }}</div>
+      <div class="dash-stat-label">Facility</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon"><i class="fa-solid fa-stethoscope"></i></div>
+      <div class="dash-stat-value" style="font-size:1rem;">{{ doctor.specialization or 'General' }}</div>
+      <div class="dash-stat-label">Specialization</div>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-12 col-lg-8">
+      <div class="portal-card">
+        <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Diagnoses</div>
+        {% if records %}
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Date</th><th>Condition</th><th>Confidence</th><th>Details</th></tr></thead>
+              <tbody>
+                {% for r in records[:5] %}
+                <tr>
+                  <td>{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</td>
+                  <td>{{ r.prediction_label }}</td>
+                  <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
+                  <td><button class="btn-action-verify btn-approve" onclick="viewRecord({{ r.id }})"><i class="fa-solid fa-eye"></i> View</button></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="dash-empty">No diagnoses yet.{% if doctor.status == 'approved' %} <a href="/predict">Run your first diagnosis</a>.{% endif %}</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="portal-card">
+        <div class="portal-section-title"><i class="fa-solid fa-bolt"></i> Quick Actions</div>
+        {% if doctor.status == 'approved' %}
+          <a href="/predict" class="btn-primary w-100 mb-2" style="text-decoration:none;justify-content:center;"><i class="fa-solid fa-stethoscope"></i> New Diagnosis</a>
+        {% else %}
+          <button class="btn-primary w-100 mb-2" disabled style="opacity:0.5;cursor:not-allowed;"><i class="fa-solid fa-lock"></i> Diagnosis Locked</button>
+        {% endif %}
+        <a href="/portal?section=history" class="btn-outline w-100" style="text-decoration:none;justify-content:center;"><i class="fa-solid fa-clock-rotate-left"></i> View History</a>
+      </div>
+    </div>
+  </div>
+
+  {# ── DOCTOR: PROFILE ── #}
+  {% elif section == 'profile' %}
+  <div class="row g-4">
+    <div class="col-12 col-md-6">
+      <div class="portal-card">
+        <div class="portal-section-title"><i class="fa-solid fa-id-card"></i> Physician Profile</div>
+        <div class="portal-meta-item"><span class="portal-meta-label">Full Name</span><span class="portal-meta-value">{{ doctor.full_name }}</span></div>
+        <div class="portal-meta-item"><span class="portal-meta-label">Email</span><span class="portal-meta-value">{{ doctor.email }}</span></div>
+        <div class="portal-meta-item"><span class="portal-meta-label">Facility</span><span class="portal-meta-value">{{ doctor.hospital or "—" }}</span></div>
+        <div class="portal-meta-item"><span class="portal-meta-label">Specialization</span><span class="portal-meta-value">{{ doctor.specialization or "—" }}</span></div>
+        <div class="portal-meta-item"><span class="portal-meta-label">Verification</span>
+          <span class="status-badge status-{{ doctor.status }}">{{ doctor.status }}</span>
+        </div>
+      </div>
+    </div>
+    {% if doctor.status == 'rejected' %}
+    <div class="col-12 col-md-6">
+      <div class="portal-card">
+        <div class="portal-section-title"><i class="fa-solid fa-file-upload"></i> Re-upload Credentials</div>
+        <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:16px;">Submit updated proof of professionalism for Super Admin review.</p>
+        <div id="reuploadAlert" class="alert d-none" role="alert"></div>
+        <form id="reuploadForm" enctype="multipart/form-data">
+          <div class="auth-form-group">
+            <label class="auth-label">Proof Document (PDF, PNG, JPG, DOC)</label>
+            <input type="file" name="proof" class="auth-input" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" required>
+          </div>
+          <button type="submit" class="auth-btn"><i class="fa-solid fa-cloud-arrow-up"></i> Submit for Review</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── DOCTOR: HISTORY ── #}
+  {% elif section == 'history' %}
+  <div class="portal-card">
+    <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Diagnosis History</div>
+    {% if doctor.status != 'approved' %}
+      <p class="dash-empty"><i class="fa-solid fa-lock"></i> Diagnosis history is available after verification is approved.</p>
+    {% elif records %}
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Date</th><th>Reference</th><th>Condition</th><th>Confidence</th><th>Model</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+            <tr>
+              <td>{{ r.created_at.strftime('%d %b %Y, %H:%M') if r.created_at else '—' }}</td>
+              <td>{{ r.patient_reference or ('SHS-' ~ r.id) }}</td>
+              <td><strong style="color:var(--cyan-primary);">{{ r.prediction_label }}</strong></td>
+              <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
+              <td>{{ (r.model_version or '—') | replace('_', ' ') | title }}</td>
+              <td>
+                <button class="btn-action-verify btn-approve" onclick="viewRecord({{ r.id }})"><i class="fa-solid fa-eye"></i> Details</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="dash-empty"><i class="fa-solid fa-folder-open"></i> No diagnosis history yet. <a href="/predict">Run a diagnosis</a> to get started.</p>
+    {% endif %}
+  </div>
+
+  {# ── DOCTOR: REPORTS ── #}
+  {% elif section == 'reports' %}
+  <div class="portal-card">
+    <div class="portal-section-title"><i class="fa-solid fa-file-medical"></i> Downloadable Reports</div>
+    {% if doctor.status != 'approved' %}
+      <p class="dash-empty"><i class="fa-solid fa-lock"></i> Reports are available after verification is approved.</p>
+    {% elif records %}
+      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">Select a diagnosis to view its full explainable report and print as PDF.</p>
+      <div class="row g-3">
+        {% for r in records %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="report-card">
+            <div class="report-card-date">{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</div>
+            <div class="report-card-diag">{{ r.prediction_label }}</div>
+            <div class="report-card-conf">{{ '%.1f' | format(r.confidence_score) }}% confidence</div>
+            <button class="btn-outline btn-sm w-100 mt-2" onclick="viewRecord({{ r.id }}, true)">
+              <i class="fa-solid fa-print"></i> View &amp; Print Report
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="dash-empty">No reports available yet.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+{% endif %}
+
+{# ── Record Detail Modal ── #}
+<div class="record-modal" id="recordModal" style="display:none;">
+  <div class="record-modal-backdrop" onclick="closeRecordModal()"></div>
+  <div class="record-modal-content portal-card">
+    <button class="record-modal-close" onclick="closeRecordModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    <div id="recordModalBody"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+async function verifyDoctor(doctorId, action) {
+    const alertBox = document.getElementById("verifyAlert");
+    if (!alertBox) return;
+    alertBox.className = "alert d-none";
+    try {
+        const res = await fetch("/api/auth/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ doctor_id: doctorId, action: action })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alertBox.textContent = data.error || "Verification update failed.";
+            alertBox.className = "alert alert-danger";
+            return;
+        }
+        const badge = document.getElementById("status-badge-" + doctorId);
+        const actionCell = document.getElementById("actions-" + doctorId);
+        if (badge) { badge.textContent = data.doctor.status; badge.className = "status-badge status-" + data.doctor.status; }
+        if (actionCell) actionCell.innerHTML = '<span class="text-muted" style="font-size:0.8rem;">No action required</span>';
+        alertBox.textContent = "Status updated to " + data.doctor.status + ".";
+        alertBox.className = "alert alert-success";
+    } catch (err) {
+        alertBox.textContent = "Network error.";
+        alertBox.className = "alert alert-danger";
+    }
+}
+
+async function updateUserStatus(select) {
+    const userId = select.dataset.userId;
+    const status = select.value;
+    if (!status) return;
+    const alertBox = document.getElementById("userAlert");
+    try {
+        const res = await fetch("/api/auth/users/manage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: parseInt(userId), status: status })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            if (alertBox) { alertBox.textContent = data.error; alertBox.className = "alert alert-danger"; }
+            return;
+        }
+        if (alertBox) { alertBox.textContent = "User status updated."; alertBox.className = "alert alert-success"; }
+        setTimeout(() => location.reload(), 800);
+    } catch (err) {
+        if (alertBox) { alertBox.textContent = "Network error."; alertBox.className = "alert alert-danger"; }
+    }
+}
+
+const reuploadForm = document.getElementById("reuploadForm");
+if (reuploadForm) {
+    reuploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const alertBox = document.getElementById("reuploadAlert");
+        const formData = new FormData(reuploadForm);
+        try {
+            const res = await fetch("/api/auth/reupload", { method: "POST", body: formData });
+            const data = await res.json();
+            if (!res.ok) {
+                alertBox.textContent = data.error || "Upload failed.";
+                alertBox.className = "alert alert-danger";
+                return;
+            }
+            alertBox.textContent = data.message;
+            alertBox.className = "alert alert-success";
+            setTimeout(() => location.reload(), 1500);
+        } catch (err) {
+            alertBox.textContent = "Network error.";
+            alertBox.className = "alert alert-danger";
+        }
+    });
+}
+</script>
+{% endblock %}
