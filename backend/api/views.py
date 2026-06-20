@@ -4,14 +4,14 @@ Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana
 """
 
 from flask import Blueprint, render_template, request, session, redirect, url_for
-from backend.database.models import User, Patient, DiagnosticRecord
+from backend.database.models import User, Patient, DiagnosticRecord, DoctorPatientConnection
 from backend.ml.model_manager import model_manager
 
 views_bp = Blueprint("views", __name__)
-
-ADMIN_SECTIONS = ("dashboard", "verification", "users", "access", "monitoring")
-DOCTOR_SECTIONS = ("dashboard", "profile", "history", "reports")
-PATIENT_SECTIONS = ("dashboard", "profile", "records", "reports")
+ADMIN_SECTIONS = ("dashboard", "verification", "users", "access", "monitoring", "view_record")
+DOCTOR_SECTIONS = ("dashboard", "profile", "history", "reports", "patients", "drafts", "view_record")
+PATIENT_SECTIONS = ("dashboard", "profile", "records", "reports", "doctors", "view_record")
+TECHNICIAN_SECTIONS = ("dashboard", "profile", "diagnose", "view_record")
 
 SECTION_TITLES = {
     "dashboard": ("Dashboard", "Overview and key metrics"),
@@ -24,9 +24,12 @@ SECTION_TITLES = {
     "history": ("Diagnosis History", "Past diagnostic sessions and outcomes"),
     "records": ("My Health Records", "Diagnoses linked to your patient profile"),
     "reports": ("Downloadable Reports", "Print and export diagnosis reports"),
+    "doctors": ("My Doctors", "Manage your healthcare providers"),
+    "patients": ("My Patients", "Manage connected patient accounts"),
+    "drafts": ("Lab Drafts", "Review and approve clinical biomarker reports"),
+    "diagnose": ("Biomarker Entry", "Enter clinical biomarkers for patient"),
+    "view_record": ("Medical Report", "Detailed clinical diagnostic insights"),
 }
-
-
 @views_bp.route("/")
 def index():
     return render_template("index.html")
@@ -93,6 +96,13 @@ def register_patient_page():
     return render_template("register_patient.html")
 
 
+@views_bp.route("/register/technician")
+def register_technician_page():
+    if session.get("role"):
+        return redirect(url_for("views.portal_page"))
+    return render_template("register_technician.html")
+
+
 def _portal_stats(doctors, all_users, records):
     patients = [u for u in all_users if u.role == "patient"]
     pending = sum(1 for d in doctors if d.status == "pending")
@@ -108,9 +118,14 @@ def _portal_stats(doctors, all_users, records):
         "total_diagnoses": len(records),
     }
 
-
 def _build_portal_context(user_id, role, section):
     page_title, page_subtitle = SECTION_TITLES.get(section, ("Portal", ""))
+
+    from flask import request
+    record = None
+    record_id = request.args.get("record_id", type=int)
+    if record_id:
+        record = DiagnosticRecord.query.get(record_id)
 
     if role == "admin":
         doctors = User.query.filter_by(role="doctor").order_by(User.created_at.desc()).all()
@@ -128,23 +143,35 @@ def _build_portal_context(user_id, role, section):
             "patient_profile": None,
             "page_title": page_title,
             "page_subtitle": page_subtitle,
+            "record": record,
         }
 
     if role == "patient":
         patient_user = User.query.get(user_id)
         patient_profile = Patient.query.filter_by(user_id=user_id).first()
         records = []
+        connections = []
+        available_doctors = []
         if patient_profile:
             records = (
-                DiagnosticRecord.query.filter_by(patient_id=patient_profile.id)
+                DiagnosticRecord.query.filter_by(patient_id=patient_profile.id, status="approved")
                 .order_by(DiagnosticRecord.created_at.desc())
                 .all()
             )
+            connections = DoctorPatientConnection.query.filter_by(patient_id=patient_profile.id).all()
+            connected_doctor_ids = [c.doctor_id for c in connections]
+            available_doctors = User.query.filter(
+                User.role == "doctor",
+                User.status == "approved",
+                ~User.id.in_(connected_doctor_ids) if connected_doctor_ids else True
+            ).all()
         return {
             "section": section,
             "patient_user": patient_user,
             "patient_profile": patient_profile,
             "records": records,
+            "connections": connections,
+            "available_doctors": available_doctors,
             "stats": {
                 "total_records": len(records),
                 "pending_count": 0,
@@ -161,8 +188,52 @@ def _build_portal_context(user_id, role, section):
             "doctor": None,
             "page_title": page_title,
             "page_subtitle": page_subtitle,
+            "record": record,
         }
 
+    if role == "technician":
+        from backend.database.models import DoctorTechnicianConnection
+        connections = DoctorTechnicianConnection.query.filter_by(technician_id=user_id).all()
+        connected_doctor_ids = [c.doctor_id for c in connections if c.status == "approved"]
+        
+        records = []
+        if connected_doctor_ids:
+            records = DiagnosticRecord.query.filter(
+                DiagnosticRecord.user_id.in_(connected_doctor_ids)
+            ).order_by(DiagnosticRecord.created_at.desc()).all()
+            
+        available_doctors = User.query.filter(
+            User.role == "doctor",
+            User.status == "approved",
+            ~User.id.in_([c.doctor_id for c in connections]) if connections else True
+        ).all()
+        
+        return {
+            "section": section,
+            "records": records,
+            "connections": connections,
+            "available_doctors": available_doctors,
+            "stats": {
+                "total_diagnoses": len(records),
+                "pending_count": sum(1 for r in records if r.status == "draft"),
+                "approved_count": sum(1 for r in records if r.status == "approved"),
+                "rejected_count": 0,
+                "total_doctors": len(available_doctors),
+                "total_patients": 0,
+                "total_users": 0,
+            },
+            "doctors": [],
+            "all_users": [],
+            "health": None,
+            "doctor": None,
+            "patient_user": None,
+            "patient_profile": None,
+            "page_title": page_title,
+            "page_subtitle": page_subtitle,
+            "record": record,
+        }
+
+    # Otherwise: Doctor
     doctor = User.query.get(user_id)
     if doctor:
         session["status"] = doctor.status
@@ -172,14 +243,29 @@ def _build_portal_context(user_id, role, section):
         .order_by(DiagnosticRecord.created_at.desc())
         .all()
     )
+    connections = DoctorPatientConnection.query.filter_by(doctor_id=user_id).all()
+    pending_connections = [c for c in connections if c.status == "pending"]
+    approved_connections = [c for c in connections if c.status == "approved"]
+
+    from backend.database.models import DoctorTechnicianConnection
+    tech_connections = DoctorTechnicianConnection.query.filter_by(doctor_id=user_id).all()
+    pending_tech_connections = [c for c in tech_connections if c.status == "pending"]
+    approved_tech_connections = [c for c in tech_connections if c.status == "approved"]
+
     return {
         "section": section,
         "doctor": doctor,
         "records": records,
+        "connections": connections,
+        "pending_connections": pending_connections,
+        "approved_connections": approved_connections,
+        "tech_connections": tech_connections,
+        "pending_tech_connections": pending_tech_connections,
+        "approved_tech_connections": approved_tech_connections,
         "stats": {
             "total_diagnoses": len(records),
-            "pending_count": 0,
-            "approved_count": 1 if doctor and doctor.status == "approved" else 0,
+            "pending_count": len(pending_connections),
+            "approved_count": len(approved_connections),
             "rejected_count": 1 if doctor and doctor.status == "rejected" else 0,
             "total_doctors": 0,
             "total_patients": 0,
@@ -192,9 +278,8 @@ def _build_portal_context(user_id, role, section):
         "patient_profile": None,
         "page_title": page_title,
         "page_subtitle": page_subtitle,
+        "record": record,
     }
-
-
 @views_bp.route("/portal")
 def portal_page():
     user_id = session.get("user_id")
@@ -210,6 +295,9 @@ def portal_page():
             section = "dashboard"
     elif role == "patient":
         if section not in PATIENT_SECTIONS:
+            section = "dashboard"
+    elif role == "technician":
+        if section not in TECHNICIAN_SECTIONS:
             section = "dashboard"
     else:
         if section not in DOCTOR_SECTIONS:

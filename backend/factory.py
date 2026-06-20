@@ -25,7 +25,7 @@ def _rebuild_diagnostic_records_table(col_info):
 
     new_cols = [
         "id", "patient_id", "user_id", "patient_reference", "biomarkers_json",
-        "result_json", "prediction_label", "confidence_score", "model_version", "created_at",
+        "result_json", "prediction_label", "confidence_score", "model_version", "status", "doctor_remarks", "created_at",
     ]
     copy_cols = [c for c in new_cols if c in col_info]
 
@@ -40,6 +40,8 @@ def _rebuild_diagnostic_records_table(col_info):
             prediction_label VARCHAR(64) NOT NULL,
             confidence_score FLOAT NOT NULL,
             model_version VARCHAR(32),
+            status VARCHAR(20) DEFAULT 'draft',
+            doctor_remarks TEXT,
             created_at DATETIME,
             FOREIGN KEY(patient_id) REFERENCES patients (id),
             FOREIGN KEY(user_id) REFERENCES users (id)
@@ -76,6 +78,8 @@ def _ensure_diagnostic_schema():
             "patient_reference": "VARCHAR(64)",
             "biomarkers_json": "TEXT",
             "result_json": "TEXT",
+            "status": "VARCHAR(20) DEFAULT 'draft'",
+            "doctor_remarks": "TEXT",
         }
         for name, col_type in additions.items():
             if name not in col_info:
@@ -105,7 +109,8 @@ def _ensure_patient_schema():
         cols = {c["name"] for c in insp.get_columns("patients")}
         if "user_id" not in cols:
             log.info("[SmartHealth] Adding patients.user_id column.")
-            db.session.execute(text("ALTER TABLE patients ADD COLUMN user_id INTEGER UNIQUE"))
+            db.session.execute(text("ALTER TABLE patients ADD COLUMN user_id INTEGER"))
+            db.session.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_patients_user_id ON patients (user_id)"))
             db.session.commit()
     except Exception as exc:
         db.session.rollback()

@@ -33,6 +33,7 @@ def _set_user_session(user, patient_profile=None):
     session["user_id"] = user.id
     session["role"] = user.role
     session["full_name"] = user.full_name
+    session["email"] = user.email
     session["status"] = user.status
     if patient_profile:
         session["patient_id"] = patient_profile.id
@@ -45,8 +46,8 @@ def _set_user_session(user, patient_profile=None):
 def register():
     try:
         account_type = request.form.get("account_type", "doctor").strip().lower()
-        if account_type not in ("doctor", "patient"):
-            return jsonify({"error": "Invalid account type. Choose doctor or patient."}), 400
+        if account_type not in ("doctor", "patient", "technician"):
+            return jsonify({"error": "Invalid account type. Choose doctor, patient, or technician."}), 400
 
         email = request.form.get("email", "").strip().lower()
         full_name = request.form.get("full_name", "").strip()
@@ -63,11 +64,34 @@ def register():
 
         if account_type == "doctor":
             return _register_doctor(email, full_name, password)
+        elif account_type == "technician":
+            return _register_technician(email, full_name, password)
         return _register_patient(email, full_name, password)
 
     except Exception as e:
         logger.exception(f"[Auth] Error during registration: {e}")
         return jsonify({"error": "Internal server error during registration."}), 500
+
+
+def _register_technician(email, full_name, password):
+    user = User(
+        username=email,
+        email=email,
+        full_name=full_name,
+        role="technician",
+        status="approved",
+    )
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+
+    _set_user_session(user)
+    logger.info(f"[Auth] Technician registered: {email}")
+    return jsonify({
+        "status": "success",
+        "message": "Technician account created successfully.",
+        "user": {"id": user.id, "email": user.email, "full_name": user.full_name, "role": user.role, "status": user.status},
+    }), 201
 
 
 def _register_doctor(email, full_name, password):
@@ -317,3 +341,120 @@ def manage_user():
         "status": "success",
         "user": {"id": user.id, "email": user.email, "role": user.role, "status": user.status},
     }), 200
+
+
+# ── GET /doctors ─────────────────────────────────────────────
+@auth_bp.route("/doctors", methods=["GET"])
+def get_verified_doctors():
+    """List all verified doctors."""
+    doctors = User.query.filter_by(role="doctor", status="approved").all()
+    return jsonify({
+        "status": "success",
+        "doctors": [{"id": d.id, "full_name": d.full_name, "specialization": d.specialization, "hospital": d.hospital} for d in doctors]
+    }), 200
+
+
+# ── POST /patient/connect ────────────────────────────────────
+@auth_bp.route("/patient/connect", methods=["POST"])
+def patient_connect_doctor():
+    """Patient requests connection to a doctor."""
+    user_id = session.get("user_id")
+    role = session.get("role")
+    if not user_id or role != "patient":
+        return jsonify({"error": "Unauthorized. Patient access required."}), 403
+        
+    data = request.get_json(force=True, silent=True) or {}
+    doctor_id = data.get("doctor_id")
+    if not doctor_id:
+        return jsonify({"error": "Doctor ID is required."}), 400
+        
+    doctor = User.query.filter_by(id=doctor_id, role="doctor", status="approved").first()
+    if not doctor:
+        return jsonify({"error": "Verified doctor not found."}), 404
+        
+    patient_profile = Patient.query.filter_by(user_id=user_id).first()
+    if not patient_profile:
+        return jsonify({"error": "Patient profile not found."}), 404
+        
+    from backend.database.models import DoctorPatientConnection
+    existing = DoctorPatientConnection.query.filter_by(doctor_id=doctor.id, patient_id=patient_profile.id).first()
+    if existing:
+        if existing.status == "rejected":
+            existing.status = "pending"
+            existing.created_at = datetime.utcnow()
+            db.session.commit()
+            return jsonify({"status": "success", "message": "Connection request re-submitted."}), 200
+        return jsonify({"error": f"Connection request is already {existing.status}."}), 400
+        
+    connection = DoctorPatientConnection(doctor_id=doctor.id, patient_id=patient_profile.id, status="pending")
+    db.session.add(connection)
+    db.session.commit()
+    
+    return jsonify({"status": "success", "message": "Connection request sent successfully."}), 201
+
+
+# ── POST /doctor/respond-connection ──────────────────────────
+@auth_bp.route("/doctor/respond-connection", methods=["POST"])
+def doctor_respond_connection():
+    """Doctor approves or rejects a connection request."""
+    user_id = session.get("user_id")
+    role = session.get("role")
+    if not user_id or role != "doctor":
+        return jsonify({"error": "Unauthorized. Doctor access required."}), 403
+        
+    data = request.get_json(force=True, silent=True) or {}
+    connection_id = data.get("connection_id")
+    action = data.get("action")  # approve or reject
+    
+    if not connection_id or action not in ("approve", "reject"):
+        return jsonify({"error": "Connection ID and valid action (approve/reject) are required."}), 400
+        
+    from backend.database.models import DoctorPatientConnection
+    connection = DoctorPatientConnection.query.filter_by(id=connection_id, doctor_id=user_id).first()
+    if not connection:
+        return jsonify({"error": "Connection request not found."}), 404
+        
+    connection.status = "approved" if action == "approve" else "rejected"
+    db.session.commit()
+    
+    return jsonify({
+        "status": "success",
+        "message": f"Connection successfully {connection.status}d.",
+        "connection": {"id": connection.id, "status": connection.status}
+    }), 200
+
+
+# ── POST /patient/disconnect ─────────────────────────────────
+@auth_bp.route("/patient/disconnect", methods=["POST"])
+def disconnect_doctor_patient():
+    """Disconnect a doctor-patient relationship."""
+    user_id = session.get("user_id")
+    role = session.get("role")
+    if not user_id:
+        return jsonify({"error": "Authentication required."}), 401
+        
+    data = request.get_json(force=True, silent=True) or {}
+    connection_id = data.get("connection_id")
+    if not connection_id:
+        return jsonify({"error": "Connection ID is required."}), 400
+        
+    from backend.database.models import DoctorPatientConnection
+    connection = DoctorPatientConnection.query.get(connection_id)
+    if not connection:
+        return jsonify({"error": "Connection not found."}), 404
+        
+    # Verify authorization: only the patient or doctor involved can disconnect
+    patient_profile = Patient.query.filter_by(user_id=user_id).first() if role == "patient" else None
+    
+    if role == "doctor" and connection.doctor_id == user_id:
+        pass
+    elif role == "patient" and patient_profile and connection.patient_id == patient_profile.id:
+        pass
+    else:
+        return jsonify({"error": "Unauthorized."}), 403
+        
+    db.session.delete(connection)
+    db.session.commit()
+    
+    return jsonify({"status": "success", "message": "Successfully disconnected."}), 200
+
