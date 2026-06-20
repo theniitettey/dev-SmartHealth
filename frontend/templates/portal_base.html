@@ -1,263 +1,174 @@
 {% extends "base.html" %}
 
-
-
 {% block body_class %}portal-page{% endblock %}
 
 {% block navbar %}{% endblock %}
 
-
-
 {% block content %}
 
 <button type="button" class="sidebar-toggle-floating" id="sidebarToggle" aria-label="Toggle sidebar">
-
   <i class="fa-solid fa-bars"></i>
-
 </button>
 
 <div class="dashboard-layout">
-
   <aside class="dashboard-sidebar" id="dashboardSidebar">
-
     <div class="sidebar-brand">
-
       <a href="/portal" class="nav-logo">
-
         <span class="logo-icon"><i class="fa-solid fa-heart-pulse"></i></span>
-
         <span class="sidebar-brand-text">
-
           {% if session.get('role') == 'admin' %}
-
             Admin Portal
-
           {% elif session.get('role') == 'patient' %}
-
             Patient Portal
-
+          {% elif session.get('role') == 'technician' %}
+            Lab Portal
           {% else %}
-
             Doctor Portal
-
           {% endif %}
-
         </span>
-
       </a>
-
     </div>
-
-
 
     <div class="sidebar-user">
-
       <div class="sidebar-avatar">
-
         {% if session.get('role') == 'patient' %}
-
           <i class="fa-solid fa-user"></i>
-
+        {% elif session.get('role') == 'technician' %}
+          <i class="fa-solid fa-microscope"></i>
         {% else %}
-
           <i class="fa-solid fa-user-doctor"></i>
-
         {% endif %}
-
       </div>
-
       <div class="sidebar-user-info">
-
         <div class="sidebar-user-name">{{ session.get('full_name', 'User') }}</div>
-
         <div class="sidebar-user-role">
-
           {% if session.get('role') == 'admin' %}
-
             Super Admin
-
           {% elif session.get('role') == 'patient' %}
-
             Registered Patient
-
+          {% elif session.get('role') == 'technician' %}
+            Lab Technician
           {% elif session.get('status') == 'approved' %}
-
             Verified Physician
-
           {% elif session.get('status') == 'pending' %}
-
             Pending Verification
-
           {% else %}
-
             Verification Rejected
-
           {% endif %}
-
         </div>
-
       </div>
-
     </div>
-
-
 
     <nav class="sidebar-nav">
-
       {% if session.get('role') == 'admin' %}
-
         <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
-
           <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
-
         </a>
-
         <a href="/portal?section=verification" class="sidebar-link {% if section == 'verification' %}active{% endif %}">
-
           <i class="fa-solid fa-user-shield"></i><span>Doctor Verification</span>
-
           {% if stats.pending_count > 0 %}
-
             <span class="sidebar-badge">{{ stats.pending_count }}</span>
-
           {% endif %}
-
         </a>
-
         <a href="/portal?section=users" class="sidebar-link {% if section == 'users' %}active{% endif %}">
-
           <i class="fa-solid fa-users"></i><span>User Management</span>
-
         </a>
-
         <a href="/portal?section=access" class="sidebar-link {% if section == 'access' %}active{% endif %}">
-
           <i class="fa-solid fa-lock"></i><span>Access Control</span>
-
         </a>
-
         <a href="/portal?section=monitoring" class="sidebar-link {% if section == 'monitoring' %}active{% endif %}">
-
           <i class="fa-solid fa-server"></i><span>System Monitoring</span>
-
         </a>
-
         <a href="/predict" class="sidebar-link {% if section == 'diagnosis' %}active{% endif %}">
-
           <i class="fa-solid fa-notes-medical"></i><span>Patient Diagnosis</span>
-
         </a>
-
       {% elif session.get('role') == 'patient' %}
-
         <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
-
           <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
-
         </a>
-
         <a href="/portal?section=profile" class="sidebar-link {% if section == 'profile' %}active{% endif %}">
-
           <i class="fa-solid fa-id-card"></i><span>My Profile</span>
-
         </a>
-
         <a href="/portal?section=records" class="sidebar-link {% if section == 'records' %}active{% endif %}">
-
-          <i class="fa-solid fa-folder-medical"></i><span>Health Records</span>
-
+          <i class="fa-solid fa-file-waveform"></i><span>Health Records</span>
         </a>
 
-        <a href="/portal?section=reports" class="sidebar-link {% if section == 'reports' %}active{% endif %}">
-
-          <i class="fa-solid fa-file-medical"></i><span>Reports</span>
-
+        <a href="/portal?section=doctors" class="sidebar-link {% if section == 'doctors' %}active{% endif %}">
+          <i class="fa-solid fa-user-doctor"></i><span>My Doctors</span>
         </a>
-
-      {% else %}
-
+      {% elif session.get('role') == 'technician' %}
         <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
-
           <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
-
         </a>
-
         <a href="/portal?section=profile" class="sidebar-link {% if section == 'profile' %}active{% endif %}">
-
           <i class="fa-solid fa-id-card"></i><span>Profile</span>
-
         </a>
-
+        <a href="/portal?section=diagnose" class="sidebar-link {% if section == 'diagnose' %}active{% endif %}">
+          <i class="fa-solid fa-notes-medical"></i><span>Biomarker Entry</span>
+        </a>
+      {% else %}
+        <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
+          <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+        </a>
+        <a href="/portal?section=profile" class="sidebar-link {% if section == 'profile' %}active{% endif %}">
+          <i class="fa-solid fa-id-card"></i><span>Profile</span>
+        </a>
         {% if doctor and doctor.status == 'approved' %}
-
         <a href="/predict" class="sidebar-link {% if section == 'diagnosis' %}active{% endif %}">
-
           <i class="fa-solid fa-notes-medical"></i><span>Patient Diagnosis</span>
-
         </a>
-
         {% else %}
-
         <span class="sidebar-link disabled" title="Requires verified account">
-
           <i class="fa-solid fa-lock"></i><span>Patient Diagnosis</span>
-
         </span>
-
         {% endif %}
-
         <a href="/portal?section=history" class="sidebar-link {% if section == 'history' %}active{% endif %}">
-
           <i class="fa-solid fa-clock-rotate-left"></i><span>Diagnosis History</span>
-
         </a>
 
-        <a href="/portal?section=reports" class="sidebar-link {% if section == 'reports' %}active{% endif %}">
-
-          <i class="fa-solid fa-file-medical"></i><span>Reports</span>
-
+        <a href="/portal?section=drafts" class="sidebar-link {% if section == 'drafts' %}active{% endif %}">
+          <i class="fa-solid fa-flask"></i><span>Lab Drafts</span>
+          {% set draft_count = namespace(value=0) %}
+          {% for r in records if r.status == 'draft' %}
+            {% set draft_count.value = draft_count.value + 1 %}
+          {% endfor %}
+          {% if draft_count.value > 0 %}
+            <span class="sidebar-badge">{{ draft_count.value }}</span>
+          {% endif %}
         </a>
-
+        <a href="/portal?section=patients" class="sidebar-link {% if section == 'patients' %}active{% endif %}">
+          <i class="fa-solid fa-users"></i><span>My Patients</span>
+          {% set pending_tech_len = pending_tech_connections|length if pending_tech_connections is defined else 0 %}
+          {% set total_req = stats.pending_count + pending_tech_len %}
+          {% if total_req > 0 %}
+            <span class="sidebar-badge">{{ total_req }}</span>
+          {% endif %}
+        </a>
       {% endif %}
-
     </nav>
 
-
-
     <div class="sidebar-footer">
-
       <a href="/" class="sidebar-link subtle"><i class="fa-solid fa-house"></i><span>Back to Site</span></a>
-
       <a href="/api/auth/logout" class="sidebar-link subtle"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
-
     </div>
-
   </aside>
 
-
-
   <div class="dashboard-main">
-
     <div class="dashboard-content">
-
       {% block dashboard_content %}{% endblock %}
-
     </div>
-
   </div>
-
 </div>
 
 {% endblock %}
 
-
-
 {% block scripts %}
 
+<script>
+  window.USER_ROLE = "{{ session.get('role') }}";
+</script>
 <script src="{{ url_for('static', filename='js/portal.js') }}"></script>
 
 {% block portal_scripts %}{% endblock %}
 
 {% endblock %}
-
-

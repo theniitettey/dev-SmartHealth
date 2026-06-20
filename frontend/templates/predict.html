@@ -5,6 +5,55 @@
   <div class="container-fluid px-0">
     <form id="predictionForm" novalidate>
 
+      <!-- Patient Association -->
+      <div class="form-section-header">
+        <span class="form-section-number">00</span>
+        <h3 class="form-section-title">Patient Identification</h3>
+      </div>
+      <div class="row g-3 mb-4 stagger-children">
+        <div class="col-12 col-md-6">
+          <div class="reveal">
+            <label class="auth-label">Patient Name</label>
+            <select id="linkPatientSelect" class="auth-input">
+              <option value="">-- Run diagnosis without linking --</option>
+              {% if approved_connections %}
+                {% for conn in approved_connections %}
+                  <option value="{{ conn.patient.id }}" data-name="{{ conn.patient.first_name }} {{ conn.patient.last_name }}">
+                    {{ conn.patient.first_name }} {{ conn.patient.last_name }} ({{ conn.patient.user.email }})
+                  </option>
+                {% endfor %}
+              {% endif %}
+            </select>
+            <div class="auth-field-hint mt-2">
+              Select a patient from the list to link this diagnosis session to their health record.
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="reveal">
+            <label class="auth-label">Patient Reference</label>
+            <input type="text" id="patientReferenceInput" class="auth-input" placeholder="Generating unique reference...">
+            <div class="auth-field-hint mt-2" id="referencePreview">
+              Preview: SHS-...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4 stagger-children" id="draftSelectRow" style="display: none; margin-top: -10px;">
+        <div class="col-12">
+          <div class="reveal">
+            <label class="auth-label">Select Lab Technician Biomarker Draft (Optional)</label>
+            <select id="draftRecordSelect" class="auth-input">
+              <option value="">-- Enter biomarkers manually --</option>
+            </select>
+            <div class="auth-field-hint mt-2">
+              Select a pending technician draft to auto-populate biomarker values for this patient.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 01 — Select Classifier -->
       <div class="form-section-header">
         <span class="form-section-number">01</span>
