@@ -18,10 +18,6 @@
         <span class="sidebar-brand-text">
           {% if session.get('role') == 'admin' %}
             Admin Portal
-          {% elif session.get('role') == 'patient' %}
-            Patient Portal
-          {% elif session.get('role') == 'technician' %}
-            Lab Portal
           {% else %}
             Doctor Portal
           {% endif %}
@@ -31,23 +27,13 @@
 
     <div class="sidebar-user">
       <div class="sidebar-avatar">
-        {% if session.get('role') == 'patient' %}
-          <i class="fa-solid fa-user"></i>
-        {% elif session.get('role') == 'technician' %}
-          <i class="fa-solid fa-microscope"></i>
-        {% else %}
-          <i class="fa-solid fa-user-doctor"></i>
-        {% endif %}
+        <i class="fa-solid fa-user-doctor"></i>
       </div>
       <div class="sidebar-user-info">
         <div class="sidebar-user-name">{{ session.get('full_name', 'User') }}</div>
         <div class="sidebar-user-role">
           {% if session.get('role') == 'admin' %}
             Super Admin
-          {% elif session.get('role') == 'patient' %}
-            Registered Patient
-          {% elif session.get('role') == 'technician' %}
-            Lab Technician
           {% elif session.get('status') == 'approved' %}
             Verified Physician
           {% elif session.get('status') == 'pending' %}
@@ -60,6 +46,12 @@
     </div>
 
     <nav class="sidebar-nav">
+      <!-- Shared Alert/Notification item -->
+      <a href="#" class="sidebar-link" id="notifSidebarLink" onclick="toggleNotificationsPanel(event)">
+        <i class="fa-solid fa-bell"></i><span>Notifications</span>
+        <span class="sidebar-badge" id="notifBadge" style="display:none;background:var(--red-critical);">0</span>
+      </a>
+
       {% if session.get('role') == 'admin' %}
         <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
           <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
@@ -73,38 +65,14 @@
         <a href="/portal?section=users" class="sidebar-link {% if section == 'users' %}active{% endif %}">
           <i class="fa-solid fa-users"></i><span>User Management</span>
         </a>
-        <a href="/portal?section=access" class="sidebar-link {% if section == 'access' %}active{% endif %}">
-          <i class="fa-solid fa-lock"></i><span>Access Control</span>
+        <a href="/portal?section=datasets" class="sidebar-link {% if section == 'datasets' %}active{% endif %}">
+          <i class="fa-solid fa-database"></i><span>Dataset Management</span>
         </a>
         <a href="/portal?section=monitoring" class="sidebar-link {% if section == 'monitoring' %}active{% endif %}">
           <i class="fa-solid fa-server"></i><span>System Monitoring</span>
         </a>
         <a href="/predict" class="sidebar-link {% if section == 'diagnosis' %}active{% endif %}">
           <i class="fa-solid fa-notes-medical"></i><span>Patient Diagnosis</span>
-        </a>
-      {% elif session.get('role') == 'patient' %}
-        <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
-          <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
-        </a>
-        <a href="/portal?section=profile" class="sidebar-link {% if section == 'profile' %}active{% endif %}">
-          <i class="fa-solid fa-id-card"></i><span>My Profile</span>
-        </a>
-        <a href="/portal?section=records" class="sidebar-link {% if section == 'records' %}active{% endif %}">
-          <i class="fa-solid fa-file-waveform"></i><span>Health Records</span>
-        </a>
-
-        <a href="/portal?section=doctors" class="sidebar-link {% if section == 'doctors' %}active{% endif %}">
-          <i class="fa-solid fa-user-doctor"></i><span>My Doctors</span>
-        </a>
-      {% elif session.get('role') == 'technician' %}
-        <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
-          <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
-        </a>
-        <a href="/portal?section=profile" class="sidebar-link {% if section == 'profile' %}active{% endif %}">
-          <i class="fa-solid fa-id-card"></i><span>Profile</span>
-        </a>
-        <a href="/portal?section=diagnose" class="sidebar-link {% if section == 'diagnose' %}active{% endif %}">
-          <i class="fa-solid fa-notes-medical"></i><span>Biomarker Entry</span>
         </a>
       {% else %}
         <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
@@ -125,24 +93,8 @@
         <a href="/portal?section=history" class="sidebar-link {% if section == 'history' %}active{% endif %}">
           <i class="fa-solid fa-clock-rotate-left"></i><span>Diagnosis History</span>
         </a>
-
-        <a href="/portal?section=drafts" class="sidebar-link {% if section == 'drafts' %}active{% endif %}">
-          <i class="fa-solid fa-flask"></i><span>Lab Drafts</span>
-          {% set draft_count = namespace(value=0) %}
-          {% for r in records if r.status == 'draft' %}
-            {% set draft_count.value = draft_count.value + 1 %}
-          {% endfor %}
-          {% if draft_count.value > 0 %}
-            <span class="sidebar-badge">{{ draft_count.value }}</span>
-          {% endif %}
-        </a>
         <a href="/portal?section=patients" class="sidebar-link {% if section == 'patients' %}active{% endif %}">
-          <i class="fa-solid fa-users"></i><span>My Patients</span>
-          {% set pending_tech_len = pending_tech_connections|length if pending_tech_connections is defined else 0 %}
-          {% set total_req = stats.pending_count + pending_tech_len %}
-          {% if total_req > 0 %}
-            <span class="sidebar-badge">{{ total_req }}</span>
-          {% endif %}
+          <i class="fa-solid fa-users"></i><span>Patient Cases</span>
         </a>
       {% endif %}
     </nav>
@@ -153,13 +105,24 @@
     </div>
   </aside>
 
+  <!-- Notifications Panel Dropdown -->
+  <div id="notificationsPanel" class="notifications-panel-popover" style="display:none;">
+    <div class="notif-panel-header">
+      <span>Notifications</span>
+      <button onclick="readAllNotifications(event)" class="btn-clear-notif">Mark all read</button>
+    </div>
+    <div id="notifListContainer" class="notif-list-container">
+      <p class="text-muted p-3 text-center">No notifications</p>
+    </div>
+  </div>
+
   <div class="dashboard-main">
     <div class="dashboard-content">
       {% block dashboard_content %}{% endblock %}
     </div>
   </div>
 </div>
-
+{% block extra_body %}{% endblock %}
 {% endblock %}
 
 {% block scripts %}
@@ -167,6 +130,7 @@
 <script>
   window.USER_ROLE = "{{ session.get('role') }}";
 </script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="{{ url_for('static', filename='js/portal.js') }}"></script>
 
 {% block portal_scripts %}{% endblock %}
