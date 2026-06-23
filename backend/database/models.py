@@ -21,6 +21,7 @@ class User(db.Model):
     full_name = db.Column(db.String(120), nullable=True)
     hospital = db.Column(db.String(120), nullable=True)
     specialization = db.Column(db.String(120), nullable=True)
+    license_number = db.Column(db.String(64), nullable=True)
     proof_filename = db.Column(db.String(256), nullable=True)
     status = db.Column(db.String(20), default='pending')  # approved, pending, rejected
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -47,14 +48,22 @@ class Patient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, unique=True, index=True)
     patient_uuid = db.Column(db.String(36), unique=True, nullable=False, index=True)
-    first_name = db.Column(db.String(64), nullable=False)
-    last_name = db.Column(db.String(64), nullable=False)
-    date_of_birth = db.Column(db.Date, nullable=False)
+    first_name = db.Column(db.String(64), nullable=True)
+    last_name = db.Column(db.String(64), nullable=True)
+    date_of_birth = db.Column(db.Date, nullable=True)
     gender = db.Column(db.String(10))
     blood_group = db.Column(db.String(5))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    user = db.relationship('User', backref=db.backref('patient_profile', uselist=False))
+    # Doctor Case Management fields
+    full_name = db.Column(db.String(120), nullable=True)
+    age = db.Column(db.Integer, nullable=True)
+    clinical_notes = db.Column(db.Text, nullable=True)
+    is_archived = db.Column(db.Boolean, default=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    user = db.relationship('User', backref=db.backref('patient_profile', uselist=False), foreign_keys=[user_id])
+    doctor = db.relationship('User', backref=db.backref('doctor_patients', lazy='dynamic'), foreign_keys=[doctor_id])
     diagnostic_history = db.relationship(
         'DiagnosticRecord',
         backref='patient',
@@ -108,6 +117,15 @@ class DiagnosticRecord(db.Model):
     model_version = db.Column(db.String(32))
     status = db.Column(db.String(20), default='draft')  # draft, approved
     doctor_remarks = db.Column(db.Text, nullable=True)
+    
+    # New review module columns
+    final_diagnosis = db.Column(db.String(120), nullable=True)
+    observations = db.Column(db.Text, nullable=True)
+    treatment_notes = db.Column(db.Text, nullable=True)
+    ai_explanation = db.Column(db.Text, nullable=True)
+    report_sections = db.Column(db.Text, nullable=True)
+    doctor_signature = db.Column(db.String(120), nullable=True)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     def to_dict(self):
@@ -120,9 +138,37 @@ class DiagnosticRecord(db.Model):
             "model_used": self.model_version,
             "status": self.status,
             "doctor_remarks": self.doctor_remarks,
+            "final_diagnosis": self.final_diagnosis,
+            "observations": self.observations,
+            "treatment_notes": self.treatment_notes,
+            "ai_explanation": self.ai_explanation,
+            "report_sections": json.loads(self.report_sections) if self.report_sections else None,
+            "doctor_signature": self.doctor_signature,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "biomarkers": json.loads(self.biomarkers_json) if self.biomarkers_json else {},
             "result": json.loads(self.result_json) if self.result_json else {},
+        }
+
+
+class Notification(db.Model):
+    """Notification alerts for doctors and admins."""
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    message = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    user = db.relationship('User', backref=db.backref('notifications', lazy='dynamic'))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "message": self.message,
+            "is_read": self.is_read,
+            "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
 
