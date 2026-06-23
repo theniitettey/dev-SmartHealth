@@ -15,11 +15,15 @@
         <div class="register-step-hints">
           <div class="register-step-hint active" data-hint="1">
             <span class="register-step-num">1</span>
-            <span>Professional details &amp; account credentials</span>
+            <span>Account Details &amp; Password</span>
           </div>
           <div class="register-step-hint" data-hint="2">
             <span class="register-step-num">2</span>
-            <span>Upload proof of professionalism</span>
+            <span>Facility &amp; License Number</span>
+          </div>
+          <div class="register-step-hint" data-hint="3">
+            <span class="register-step-num">3</span>
+            <span>Upload Verification Proof</span>
           </div>
         </div>
       </div>
@@ -31,6 +35,8 @@
           <div class="register-step-dot active" data-step="1">1</div>
           <div class="register-step-line"></div>
           <div class="register-step-dot" data-step="2">2</div>
+          <div class="register-step-line"></div>
+          <div class="register-step-dot" data-step="3">3</div>
         </div>
 
         <h2 class="auth-title text-start" style="margin-bottom:6px;font-size:1.6rem;" id="stepTitle">Step 1 — Your Details</h2>
@@ -41,6 +47,7 @@
         <form id="doctorRegisterForm" enctype="multipart/form-data">
           <input type="hidden" name="account_type" value="doctor">
 
+          <!-- STEP 1 -->
           <div class="register-step-panel active" data-step="1">
             <div class="auth-form-group">
               <label for="fullName" class="auth-label">Full Name *</label>
@@ -55,17 +62,34 @@
               <input type="password" id="password" name="password" class="auth-input" placeholder="Minimum 8 characters" required minlength="8">
             </div>
             <div class="auth-form-group">
+              <label for="confirmPassword" class="auth-label">Confirm Password *</label>
+              <input type="password" id="confirmPassword" name="confirm_password" class="auth-input" placeholder="Re-enter your password" required minlength="8">
+            </div>
+            <button type="button" class="auth-btn" id="nextStepBtn1">Continue <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="register-step-panel" data-step="2">
+            <div class="auth-form-group">
+              <label for="licenseNumber" class="auth-label">Medical License Number *</label>
+              <input type="text" id="licenseNumber" name="license_number" class="auth-input" placeholder="e.g. MDC-12345" required>
+            </div>
+            <div class="auth-form-group">
               <label for="hospital" class="auth-label">Hospital / Facility</label>
               <input type="text" id="hospital" name="hospital" class="auth-input" placeholder="Optional">
             </div>
             <div class="auth-form-group">
-              <label for="specialization" class="auth-label">Specialization</label>
-              <input type="text" id="specialization" name="specialization" class="auth-input" placeholder="Optional">
+              <label for="specialization" class="auth-label">Specialty (Optional)</label>
+              <input type="text" id="specialization" name="specialization" class="auth-input" placeholder="e.g. Cardiology">
             </div>
-            <button type="button" class="auth-btn" id="nextStepBtn">Continue to Upload <i class="fa-solid fa-arrow-right"></i></button>
+            <div class="auth-btn-row">
+              <button type="button" class="auth-btn-outline" id="backStepBtn1"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button type="button" class="auth-btn" id="nextStepBtn2">Continue <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
           </div>
 
-          <div class="register-step-panel" data-step="2">
+          <!-- STEP 3 -->
+          <div class="register-step-panel" data-step="3">
             <div class="auth-form-group">
               <label class="auth-label">Proof of Professionalism *</label>
               <p class="auth-field-hint">Medical License, Practicing Certificate, or Certificate of Occupation.</p>
@@ -87,7 +111,7 @@
               </div>
             </div>
             <div class="auth-btn-row">
-              <button type="button" class="auth-btn-outline" id="backStepBtn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button type="button" class="auth-btn-outline" id="backStepBtn2"><i class="fa-solid fa-arrow-left"></i> Back</button>
               <button type="submit" class="auth-btn" id="submitBtn">
                 <span class="btn-spinner"></span>
                 <span class="btn-text">Submit Registration</span>
@@ -98,7 +122,7 @@
 
         <div class="auth-links text-start">
           <p style="color:var(--text-secondary);margin-bottom:4px;">
-            <a href="/register/patient">Register as patient</a> · <a href="/login">Sign in</a>
+            Already have an account? <a href="/login">Sign in here</a>
           </p>
         </div>
       </div>
@@ -117,8 +141,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const stepTitle = document.getElementById("stepTitle");
     const stepSubtitle = document.getElementById("stepSubtitle");
     const alertBox = document.getElementById("registerAlert");
-    const nextBtn = document.getElementById("nextStepBtn");
-    const backBtn = document.getElementById("backStepBtn");
+    
+    const nextBtn1 = document.getElementById("nextStepBtn1");
+    const nextBtn2 = document.getElementById("nextStepBtn2");
+    const backBtn1 = document.getElementById("backStepBtn1");
+    const backBtn2 = document.getElementById("backStepBtn2");
+    
     const submitBtn = document.getElementById("submitBtn");
     const fileInput = document.getElementById("proof");
     const dragDropZone = document.getElementById("dragDropZone");
@@ -134,20 +162,27 @@ document.addEventListener("DOMContentLoaded", () => {
     function goToStep(step) {
         currentStep = step;
         stepPanels.forEach(p => p.classList.toggle("active", parseInt(p.dataset.step) === step));
-        stepDots.forEach(d => d.classList.toggle("active", parseInt(d.dataset.step) === step));
+        stepDots.forEach(d => {
+            const dStep = parseInt(d.dataset.step);
+            d.classList.toggle("active", dStep <= step);
+        });
         stepHints.forEach(h => h.classList.toggle("active", parseInt(h.dataset.hint) === step));
+        
         if (step === 1) {
             stepTitle.textContent = "Step 1 — Your Details";
-            stepSubtitle.textContent = "Enter your professional and account information.";
+            stepSubtitle.textContent = "Enter your account details and password.";
+        } else if (step === 2) {
+            stepTitle.textContent = "Step 2 — License & Facility";
+            stepSubtitle.textContent = "Provide your medical facility and license information.";
         } else {
-            stepTitle.textContent = "Step 2 — Upload Credentials";
+            stepTitle.textContent = "Step 3 — Upload Credentials";
             stepSubtitle.textContent = "Upload your professional certificate for verification.";
         }
         alertBox.classList.add("d-none");
     }
 
     function validateStep1() {
-        const fields = ["fullName", "email", "password"];
+        const fields = ["fullName", "email", "password", "confirmPassword"];
         for (const id of fields) {
             const el = document.getElementById(id);
             if (!el.value.trim() || !el.checkValidity()) {
@@ -158,6 +193,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (document.getElementById("password").value.length < 8) {
             alertBox.textContent = "Password must be at least 8 characters.";
             alertBox.classList.remove("d-none");
+            return false;
+        }
+        if (document.getElementById("password").value !== document.getElementById("confirmPassword").value) {
+            alertBox.textContent = "Passwords do not match.";
+            alertBox.classList.remove("d-none");
+            return false;
+        }
+        return true;
+    }
+
+    function validateStep2() {
+        const license = document.getElementById("licenseNumber");
+        if (!license.value.trim() || !license.checkValidity()) {
+            license.reportValidity();
             return false;
         }
         return true;
@@ -194,11 +243,16 @@ document.addEventListener("DOMContentLoaded", () => {
         showPreview(file);
     }
 
-    nextBtn.addEventListener("click", () => {
+    nextBtn1.addEventListener("click", () => {
         if (validateStep1()) goToStep(2);
     });
 
-    backBtn.addEventListener("click", () => goToStep(1));
+    nextBtn2.addEventListener("click", () => {
+        if (validateStep2()) goToStep(3);
+    });
+
+    backBtn1.addEventListener("click", () => goToStep(1));
+    backBtn2.addEventListener("click", () => goToStep(2));
 
     dragDropZone.addEventListener("click", (e) => {
         if (e.target.closest("#changeFileBtn")) return;
@@ -249,6 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await res.json();
             if (!res.ok) {
                 alertBox.textContent = data.error || "Registration failed.";
+                alertBox.className = "alert alert-danger";
                 alertBox.classList.remove("d-none");
                 submitBtn.disabled = false;
                 return;
@@ -256,6 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
             window.location.href = "/portal";
         } catch (err) {
             alertBox.textContent = "Network error. Please try again.";
+            alertBox.className = "alert alert-danger";
             alertBox.classList.remove("d-none");
             submitBtn.disabled = false;
         }

@@ -52,6 +52,9 @@ class Config:
     # Logging
     LOG_LEVEL        = os.environ.get("LOG_LEVEL", "INFO")
 
+    # Groq API
+    GROQ_API_KEY     = os.environ.get("GROQ_API_KEY", "")
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

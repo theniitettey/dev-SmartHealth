@@ -17,6 +17,7 @@ services:
       - PORT=5000
       - SECRET_KEY=${SECRET_KEY:-smarthealthsync-docker-secret}
       - LOG_LEVEL=INFO
+      - GROQ_API_KEY=${GROQ_API_KEY}
     volumes:
       - ./backend:/app/backend
       - ./frontend:/app/frontend
