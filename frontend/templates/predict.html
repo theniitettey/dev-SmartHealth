@@ -5,6 +5,41 @@
   <div class="container-fluid px-0">
     <form id="predictionForm" novalidate>
 
+      <!-- Patient Association -->
+      <div class="form-section-header">
+        <span class="form-section-number">00</span>
+        <h3 class="form-section-title">Patient Identification</h3>
+      </div>
+      <div class="row g-3 mb-4 stagger-children">
+        <div class="col-12 col-md-6">
+          <div class="reveal">
+            <label class="auth-label">Patient Name</label>
+            <select id="linkPatientSelect" class="auth-input">
+              <option value="">-- Select a patient to enable diagnosis --</option>
+              {% if active_patients %}
+                {% for p in active_patients %}
+                  <option value="{{ p.id }}" data-name="{{ p.full_name }}">
+                    {{ p.full_name }} (ID: {{ p.patient_uuid }})
+                  </option>
+                {% endfor %}
+              {% endif %}
+            </select>
+            <div class="auth-field-hint mt-2">
+              Select a patient case to link this diagnosis session to their history.
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="reveal">
+            <label class="auth-label">Patient Reference</label>
+            <input type="text" id="patientReferenceInput" class="auth-input" placeholder="Generating unique reference...">
+            <div class="auth-field-hint mt-2" id="referencePreview">
+              Preview: SHS-...
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 01 — Select Classifier -->
       <div class="form-section-header">
         <span class="form-section-number">01</span>
@@ -39,16 +74,22 @@
       </div>
       <input type="hidden" name="model" id="selectedModel" value="random_forest">
 
-      <!-- 02 — Clinical Presets -->
+      <!-- 02 — Disease Selection Category -->
       <div class="form-section-header">
         <span class="form-section-number">02</span>
-        <h3 class="form-section-title">Clinical Presets</h3>
+        <h3 class="form-section-title">Select Disease Prediction Category</h3>
       </div>
-      <div class="preset-strip mb-3">
-        <div class="preset-btn preset-healthy"  data-preset="healthy"><span class="preset-dot"></span>Healthy</div>
-        <div class="preset-btn preset-diabetes" data-preset="diabetes"><span class="preset-dot"></span>Diabetic</div>
-        <div class="preset-btn preset-anemia"   data-preset="anemia"><span class="preset-dot"></span>Anemic</div>
-        <div class="preset-btn preset-cardio"   data-preset="heart"><span class="preset-dot"></span>Cardio</div>
+      <div class="auth-form-group mb-4 reveal">
+        <select id="diseaseCategorySelect" class="auth-input" style="font-size:1.1rem; font-weight:600; border-color:var(--cyan-primary);">
+          <option value="all">-- Show All Biomarker Fields (Full Panel) --</option>
+          <option value="diabetes">Diabetes Prediction</option>
+          <option value="cardiovascular">Cardiovascular Disease Prediction</option>
+          <option value="anemia">Anemia Prediction</option>
+          <option value="typhoid">Typhoid Prediction</option>
+        </select>
+        <div class="auth-field-hint mt-2">
+          Selecting a category dynamically customizes the form to show only the required clinical biomarker inputs.
+        </div>
       </div>
 
       <div class="data-info-strip reveal">
@@ -433,8 +474,39 @@
 
       </div><!-- /Liver & Kidney -->
 
+      <!-- Typhoid Specific Titers -->
+      <div class="biomarker-group-title reveal typhoid-only-group" style="display:none;">Typhoid Specific Titers</div>
+      <div class="row g-3 mb-4 stagger-children typhoid-only-group" style="display:none;">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label">
+              <span class="bm-clinical-name">Widal O Titer</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">score · normalised</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-WidalO"
+                   data-feature="Widal O Titer" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: &lt;0.5 · Elevated: &gt;0.55</div>
+            <div class="field-error-msg" id="err-WidalO">Enter a value between 0.0 and 1.0</div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="reveal">
+            <label class="input-label">
+              <span class="bm-clinical-name">Widal H Titer</span>
+              <span class="input-range-hint">0.0–1.0</span>
+            </label>
+            <div class="input-unit-badge">score · normalised</div>
+            <input type="number" step="0.01" class="biomarker-input" id="f-WidalH"
+                   data-feature="Widal H Titer" value="0.5" min="0" max="1" required>
+            <div class="clinical-ref-range">Normal: &lt;0.5 · Elevated: &gt;0.55</div>
+            <div class="field-error-msg" id="err-WidalH">Enter a value between 0.0 and 1.0</div>
+          </div>
+        </div>
+      </div>
+
       <div class="submit-btn-wrap">
-        <button type="submit" class="submit-btn" id="submitBtn">
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>
           <span class="btn-spinner"></span>
           <span class="btn-text">Run Clinical Diagnosis Engine</span>
         </button>

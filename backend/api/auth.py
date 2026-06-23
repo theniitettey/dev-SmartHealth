@@ -33,6 +33,7 @@ def _set_user_session(user, patient_profile=None):
     session["user_id"] = user.id
     session["role"] = user.role
     session["full_name"] = user.full_name
+    session["email"] = user.email
     session["status"] = user.status
     if patient_profile:
         session["patient_id"] = patient_profile.id
@@ -45,8 +46,8 @@ def _set_user_session(user, patient_profile=None):
 def register():
     try:
         account_type = request.form.get("account_type", "doctor").strip().lower()
-        if account_type not in ("doctor", "patient"):
-            return jsonify({"error": "Invalid account type. Choose doctor or patient."}), 400
+        if account_type != "doctor":
+            return jsonify({"error": "Only Doctor registration is allowed on this platform."}), 400
 
         email = request.form.get("email", "").strip().lower()
         full_name = request.form.get("full_name", "").strip()
@@ -61,9 +62,7 @@ def register():
         if User.query.filter_by(email=email).first():
             return jsonify({"error": "An account with this email address already exists."}), 400
 
-        if account_type == "doctor":
-            return _register_doctor(email, full_name, password)
-        return _register_patient(email, full_name, password)
+        return _register_doctor(email, full_name, password)
 
     except Exception as e:
         logger.exception(f"[Auth] Error during registration: {e}")
@@ -73,6 +72,10 @@ def register():
 def _register_doctor(email, full_name, password):
     hospital = request.form.get("hospital", "").strip() or None
     specialization = request.form.get("specialization", "").strip() or None
+    license_number = request.form.get("license_number", "").strip() or None
+
+    if not license_number:
+        return jsonify({"error": "Medical License Number is required."}), 400
 
     if "proof" not in request.files:
         return jsonify({"error": "Proof of professionalism document is required."}), 400
@@ -95,6 +98,7 @@ def _register_doctor(email, full_name, password):
         full_name=full_name,
         hospital=hospital,
         specialization=specialization,
+        license_number=license_number,
         proof_filename=unique_filename,
         role="doctor",
         status="pending",
@@ -317,3 +321,15 @@ def manage_user():
         "status": "success",
         "user": {"id": user.id, "email": user.email, "role": user.role, "status": user.status},
     }), 200
+
+
+# ── GET /doctors ─────────────────────────────────────────────
+@auth_bp.route("/doctors", methods=["GET"])
+def get_verified_doctors():
+    """List all verified doctors."""
+    doctors = User.query.filter_by(role="doctor", status="approved").all()
+    return jsonify({
+        "status": "success",
+        "doctors": [{"id": d.id, "full_name": d.full_name, "specialization": d.specialization, "hospital": d.hospital} for d in doctors]
+    }), 200
+
