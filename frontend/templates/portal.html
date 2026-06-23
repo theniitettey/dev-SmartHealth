@@ -36,7 +36,7 @@
       <div><strong>Patient Disclaimer</strong> — This is an informational prototype. Always verify your results and
         consult with your physician regarding your clinical diagnosis.</div>
     </div>
-    <button class="print-result-btn mt-3" onclick="printRecordReportInline({{ record.id }})"><i
+    <button class="print-result-btn mt-3" data-record-id="{{ record.id }}" onclick="printRecordReportInline(this.dataset.recordId)"><i
         class="fa-solid fa-print"></i> Print Report</button>
   </div>
 
@@ -51,9 +51,9 @@
       </div>
       <div style="display:flex; gap:8px; margin-top:8px;">
         <input type="text" id="aiChatInput" class="auth-input" style="padding:8px;" placeholder="Ask AI a question..."
-          onkeydown="if(event.key === 'Enter') sendChatMessageInline({{ record.id }})">
+          data-record-id="{{ record.id }}" onkeydown="if(event.key === 'Enter') sendChatMessageInline(this.dataset.recordId)">
         <button class="btn-action-verify btn-approve" style="padding:8px 16px; border-radius:var(--radius-sm);"
-          onclick="sendChatMessageInline({{ record.id }})">Ask</button>
+          data-record-id="{{ record.id }}" onclick="sendChatMessageInline(this.dataset.recordId)">Ask</button>
       </div>
     </div>
   </div>
@@ -103,90 +103,278 @@
       preview...</p>
   </div>
 
-  <div class="fi-title mt-4"><i class="fa-solid fa-signature"></i> Final Verdict & Remarks</div>
-  <div class="auth-form-group">
-    <label class="auth-label">Choose Approved Model</label>
-    <select id="modalSelectModel" class="auth-input">
-      <option value="random_forest">Random Forest (Accuracy: ~95%)</option>
-      <option value="svm">Support Vector Machine (Accuracy: ~95%)</option>
-      <option value="decision_tree">Decision Tree (Accuracy: ~92%)</option>
-      <option value="logistic_regression">Logistic Regression (Accuracy: ~82%)</option>
-    </select>
+  <div class="fi-title mt-4"><i class="fa-solid fa-signature"></i> Diagnosis Decision & Finalization</div>
+  
+  <div class="row g-3">
+    <div class="col-12 col-md-6">
+      <div class="auth-form-group">
+        <label class="auth-label">Choose Approved Model Classifier</label>
+        <select id="modalSelectModel" class="auth-input">
+          <option value="random_forest">Random Forest (Accuracy: ~95%)</option>
+          <option value="svm">Support Vector Machine (Accuracy: ~95%)</option>
+          <option value="decision_tree">Decision Tree (Accuracy: ~92%)</option>
+          <option value="logistic_regression">Logistic Regression (Accuracy: ~82%)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="col-12 col-md-6">
+      <div class="auth-form-group">
+        <label class="auth-label">Diagnosis Option</label>
+        <select id="diagnosisDecisionSelect" class="auth-input" onchange="toggleDiagnosisOverride(this.value, '{{ record.prediction_label }}')">
+          <option value="accept">Accept Prediction: "{{ record.prediction_label }}"</option>
+          <option value="override">Override Prediction (Type Custom Diagnosis)</option>
+        </select>
+      </div>
+    </div>
   </div>
+
   <div class="auth-form-group mt-3">
-    <label class="auth-label">Doctor's Remarks / Prescription / Recommendation</label>
-    <textarea id="modalDoctorRemarks" class="auth-input mt-1" rows="4" style="resize:vertical;"
-      placeholder="Write doctor's verdict, remarks, or advice..."></textarea>
+    <label class="auth-label">Final Diagnosis Label *</label>
+    <input type="text" id="finalDiagnosisLabel" class="auth-input" value="{{ record.prediction_label }}" placeholder="e.g. Type 2 Diabetes Mellitus" required>
   </div>
-  <button class="auth-btn mt-3" onclick="approveRecordReportInline({{ record.id }})"><i
-      class="fa-solid fa-signature"></i> Finalize, Sign Off & Approve</button>
+
+  <div class="row g-3 mt-2">
+    <div class="col-12 col-md-6">
+      <div class="auth-form-group">
+        <label class="auth-label">Clinical Observations</label>
+        <textarea id="modalObservations" class="auth-input" rows="3" placeholder="Symptoms, lab presentation notes..."></textarea>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="auth-form-group">
+        <label class="auth-label">Treatment & Prescription Notes</label>
+        <textarea id="modalTreatmentNotes" class="auth-input" rows="3" placeholder="Medication plans, clinical diet, exercise advice..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI EXPLANATION GENERATOR MODULE -->
+  <div class="portal-card mt-4" style="background: rgba(197, 231, 16, 0.02); border: 1px solid rgba(197, 231, 16, 0.15);">
+    <div class="portal-section-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span style="color: var(--cyan-primary);"><i class="fa-solid fa-brain"></i> Patient-Friendly AI Explainer</span>
+      <button class="btn-outline btn-sm" style="border-color: var(--cyan-primary); color: var(--cyan-primary);" data-record-id="{{ record.id }}" onclick="generateAIExplanationInline(this.dataset.recordId)">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Explanation
+      </button>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 12px;">
+      Translate complex medical jargon into easy-to-understand language. You can freely edit, add, or remove text before saving.
+    </p>
+    <div class="auth-form-group">
+      <textarea id="modalAIExplanation" class="auth-input" rows="4" placeholder="Your simplified explanation will appear here..."></textarea>
+    </div>
+  </div>
+
+  <!-- CUSTOM PDF BUILDER SECTION SELECTION -->
+  <div class="portal-card mt-4" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+    <div class="portal-section-title"><i class="fa-solid fa-sliders"></i> Custom PDF Builder</div>
+    <p style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 15px;">
+      Select which clinical report sections to include in the generated patient PDF copy.
+    </p>
+    <div class="row g-2 text-start">
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_patient" class="pdf-section-toggle" checked> Patient Information
+        </label>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_biomarkers" class="pdf-section-toggle" checked> Biomarker Results
+        </label>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_ml_pred" class="pdf-section-toggle" checked> ML Prediction Model
+        </label>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_confidence" class="pdf-section-toggle" checked> Prediction Confidence
+        </label>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_final_diag" class="pdf-section-toggle" checked> Final Diagnosis
+        </label>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_ai_exp" class="pdf-section-toggle" checked> AI Simplified Explanation
+        </label>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_doctor_notes" class="pdf-section-toggle" checked> Doctor's Notes
+        </label>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_signature" class="pdf-section-toggle" checked> Doctor's Signature
+        </label>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_logo" class="pdf-section-toggle" checked> Hospital Logo (Optional)
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-form-group mt-3">
+    <label class="auth-label">Physician Electronic Signature (Sign Full Name) *</label>
+    <input type="text" id="modalDoctorSignature" class="auth-input mt-1" value="Dr. {{ session.get('full_name', '') }}" placeholder="Sign your full name to approve..." required>
+  </div>
+
+  <button class="auth-btn mt-4" style="background:var(--cyan-primary); color:#111;" data-record-id="{{ record.id }}" onclick="finalizeDiagnosisInline(this.dataset.recordId)">
+    <i class="fa-solid fa-signature"></i> Finalize, Save & Approve Diagnosis
+  </button>
 </div>
 {% else %}
 <div class="portal-card">
-  <div class="portal-section-title"><i class="fa-solid fa-file-medical"></i> Diagnosis Report</div>
-  <div class="result-meta-row mb-3">
-    <div>
-      <div class="confidence-value-large">{{ record.prediction_label }}</div>
-      <div class="confidence-label-small">Predicted Condition</div>
-    </div>
-    <div>
-      <div class="confidence-value-large">{{ '%.1f' | format(record.confidence_score or 0) }}%</div>
-      <div class="confidence-label-small">Confidence Score</div>
+  <div class="portal-section-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="fa-solid fa-file-medical"></i> Finalized Diagnosis Report</span>
+    <div class="d-flex gap-2">
+      <button class="btn-outline btn-sm" style="padding:6px 12px; border-radius:var(--radius-sm);" data-record-id="{{ record.id }}" onclick="printCustomReport(this.dataset.recordId)"><i class="fa-solid fa-print"></i> Print Report</button>
+      <button class="btn-primary btn-sm" style="padding:6px 12px; border-radius:var(--radius-sm);" data-record-id="{{ record.id }}" data-patient-ref="{{ record.patient_reference }}" onclick="downloadCustomReportPDF(this.dataset.recordId, this.dataset.patientRef)"><i class="fa-solid fa-download"></i> Download PDF</button>
     </div>
   </div>
 
-  <div class="patient-details-card mb-3"
-    style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:var(--radius-md);padding:15px;">
-    <h5 style="color:var(--text-primary);font-size:0.95rem;margin-bottom:12px;font-family:var(--font-display);"><i
-        class="fa-solid fa-id-card-clip" style="color:var(--cyan-primary);margin-right:6px;"></i> Patient Association
-      Details</h5>
+  <!-- Interactive Section Customizer for Printing -->
+  <div class="mb-4 p-3" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-sm);">
+    <strong style="color:var(--cyan-primary); font-size:0.85rem; display:block; margin-bottom:8px;"><i class="fa-solid fa-sliders"></i> Customize Exported Sections</strong>
     <div class="row g-2 text-start">
-      {% if record.patient %}
-      <div class="col-12 col-sm-6"><strong>Name:</strong> {{ record.patient.first_name }} {{ record.patient.last_name }}
+      <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_patient" checked onchange="togglePrintSection('patient')"> Patient Info</label></div>
+      <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_biomarkers" checked onchange="togglePrintSection('biomarkers')"> Biomarkers</label></div>
+      <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_ml" checked onchange="togglePrintSection('ml')"> ML Model Info</label></div>
+      <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_ai" checked onchange="togglePrintSection('ai')"> AI Explanation</label></div>
+      <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_notes" checked onchange="togglePrintSection('notes')"> Doctor's Notes</label></div>
+      <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_signature" checked onchange="togglePrintSection('signature')"> Signature</label></div>
+      <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_logo" checked onchange="togglePrintSection('logo')"> Clinic Logo</label></div>
+    </div>
+  </div>
+
+  <!-- The printable container wrapper -->
+  <div id="printableReportCard" class="printable-report-wrapper" style="background:rgba(255,255,255,0.01); padding:24px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.05); color:var(--text-primary);">
+    <div id="reportSection_logo" class="text-center mb-3">
+      <i class="fa-solid fa-heart-pulse" style="font-size:2rem; color:var(--cyan-primary);"></i>
+      <h4 style="margin:5px 0 0 0; font-family:var(--font-display); color:var(--text-primary);">Smart Health Sync Clinic</h4>
+      <small style="color:var(--text-muted);">Clinical Decision Support System</small>
+    </div>
+
+    <div id="reportSection_patient" class="mb-4">
+      <h5 style="color:var(--cyan-primary); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; font-size:0.95rem; margin-bottom:10px;"><i class="fa-solid fa-user"></i> Patient Information</h5>
+      <div class="row g-2 text-start" style="font-size:0.88rem;">
+        {% if record.patient %}
+        <div class="col-6"><strong>Name:</strong> {{ record.patient.first_name }} {{ record.patient.last_name }}</div>
+        <div class="col-6"><strong>Age:</strong> {{ record.patient.age }} yrs</div>
+        <div class="col-6"><strong>Gender:</strong> {{ record.patient.gender }}</div>
+        {% else %}
+        <div class="col-12"><strong>Case:</strong> Standalone Diagnosis Case</div>
+        {% endif %}
+        <div class="col-6"><strong>Reference:</strong> <span style="font-family:var(--font-mono); color:var(--cyan-primary);">{{ record.patient_reference or ('SHS-' ~ record.id) }}</span></div>
+        <div class="col-6"><strong>Date:</strong> {{ record.created_at.strftime('%d %b %Y, %H:%M') if record.created_at else '—' }}</div>
       </div>
-      <div class="col-12 col-sm-6"><strong>Email:</strong> {{ record.patient.user.email if record.patient.user else '—'
-        }}</div>
-      <div class="col-12 col-sm-6"><strong>Date of Birth:</strong> {{ record.patient.date_of_birth.strftime('%d %b %Y')
-        }}</div>
-      <div class="col-12 col-sm-6"><strong>Gender:</strong> {{ record.patient.gender or '—' }}</div>
-      {% else %}
-      <div class="col-12"><strong>Standalone Diagnosis Run</strong> (No patient profile linked)</div>
+    </div>
+
+    <div id="reportSection_biomarkers" class="mb-4">
+      <h5 style="color:var(--cyan-primary); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; font-size:0.95rem; margin-bottom:12px;"><i class="fa-solid fa-flask"></i> Biomarker Results</h5>
+      <div class="biomarkers-grid">
+        {% for k, v in rec_dict.biomarkers.items() %}
+        <div class="biomarker-item">
+          <div class="biomarker-name">{{ k }}</div>
+          <div class="biomarker-val">{{ '%.2f' | format(v) if v is number else v }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="reportSection_ml" class="mb-4">
+      <h5 style="color:var(--cyan-primary); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; font-size:0.95rem; margin-bottom:10px;"><i class="fa-solid fa-robot"></i> Machine Learning Inference</h5>
+      <div class="row g-2 text-start" style="font-size:0.88rem; margin-bottom:15px;">
+        <div class="col-6"><strong>ML Prediction:</strong> {{ record.prediction_label }}</div>
+        <div class="col-6"><strong>Confidence Score:</strong> {{ '%.1f' | format(record.confidence_score or 0) }}%</div>
+        <div class="col-6"><strong>Model Version:</strong> {{ (record.model_version or '—') | replace('_', ' ') | upper }}</div>
+      </div>
+      
+      <!-- Probability Bars -->
+      {% if rec_dict.result and rec_dict.result.get('probabilities') %}
+      <h6 style="color:var(--text-secondary); font-size:0.8rem; margin-top:15px; margin-bottom:8px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.05em;"><i class="fa-solid fa-chart-simple"></i> Weighted Class Probabilities</h6>
+      <table class="prob-table" style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+        <tbody>
+          {% for name, prob in rec_dict.result.get('probabilities', {}).items() | sort(attribute='1', reverse=true) %}
+          <tr>
+            <td style="padding:4px 0; font-size:0.82rem; width:120px; color:var(--text-primary);">{{ name }}</td>
+            <td style="padding:4px 10px; width: 60%;">
+              <div class="prob-bar" style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+                <div class="prob-fill" style="height:100%; border-radius:3px; background:var(--cyan-primary); --w: {{ prob }}%; width: var(--w);"></div>
+              </div>
+            </td>
+            <td style="text-align:right; font-family:var(--font-mono); font-size:0.8rem; color:var(--cyan-primary);">{{ '%.1f' | format(prob) }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
       {% endif %}
-      <div class="col-12"><strong>Reference:</strong> <span
-          style="font-family:var(--font-mono);font-size:0.85rem;color:var(--cyan-primary);">{{ record.patient_reference
-          or ('SHS-' ~ record.id) }}</span></div>
+
+      <!-- Feature Importance Bars -->
+      {% if rec_dict.result and rec_dict.result.get('feature_importance') %}
+      <h6 style="color:var(--text-secondary); font-size:0.8rem; margin-top:15px; margin-bottom:8px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.05em;"><i class="fa-solid fa-list-check"></i> Top Predictive Biomarkers - Feature Importance</h6>
+      <table class="prob-table" style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+        <tbody>
+          {% for feat, imp in rec_dict.result.get('feature_importance', {}).items() | sort(attribute='1', reverse=true) %}
+          {% set imp_pct = imp * 100 if imp < 1.0 else imp %}
+          {% if imp_pct > 1.0 %}
+          <tr>
+            <td style="padding:4px 0; font-size:0.82rem; width:180px; color:var(--text-primary);">{{ feat }}</td>
+            <td style="padding:4px 10px; width: 50%;">
+              <div class="prob-bar" style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+                <div class="prob-fill-neural" style="height:100%; border-radius:3px; background:var(--purple-neural); --w: {{ imp_pct }}%; width: var(--w);"></div>
+              </div>
+            </td>
+            <td style="text-align:right; font-family:var(--font-mono); font-size:0.8rem; color:var(--purple-neural);">{{ '%.1f' | format(imp_pct) }}%</td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+
+    <div id="reportSection_final_diag" class="mb-4">
+      <h5 style="color:var(--cyan-primary); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; font-size:0.95rem; margin-bottom:10px;"><i class="fa-solid fa-signature"></i> Final Diagnosis</h5>
+      <p style="font-size:1.1rem; font-weight:600; color:var(--text-primary); margin:5px 0 0 0;">{{ record.final_diagnosis or record.prediction_label }}</p>
+    </div>
+
+    <div id="reportSection_ai" class="mb-4">
+      <h5 style="color:var(--cyan-primary); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; font-size:0.95rem; margin-bottom:10px;"><i class="fa-solid fa-brain"></i> AI Simplified Explanation</h5>
+      <div class="markdown-content" style="font-size:0.88rem; color:var(--text-secondary); line-height:1.6; margin:5px 0 0 0;">{{ record.ai_explanation or "No explanation generated." }}</div>
+    </div>
+
+    <div id="reportSection_notes" class="mb-4">
+      <h5 style="color:var(--cyan-primary); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; font-size:0.95rem; margin-bottom:10px;"><i class="fa-solid fa-comment-medical"></i> Doctor Notes & Recommendations</h5>
+      <div class="row g-3 text-start" style="font-size:0.88rem;">
+        <div class="col-12 col-md-6">
+          <strong>Observations:</strong>
+          <p style="margin:4px 0 0 0; color:var(--text-secondary); line-height:1.5;">{{ record.observations or "No clinical observations recorded." }}</p>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>Treatment Plan:</strong>
+          <p style="margin:4px 0 0 0; color:var(--text-secondary); line-height:1.5;">{{ record.treatment_notes or "No treatment guidelines recorded." }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="reportSection_signature" class="mt-4 pt-3 d-flex justify-content-between align-items-center" style="border-top:1px dashed rgba(255,255,255,0.1);">
+      <div>
+        <small style="color:var(--text-muted); display:block;">Diagnosis Verdict Status</small>
+        <span class="status-badge status-approved">Approved & Finalized</span>
+      </div>
+      <div class="text-end">
+        <small style="color:var(--text-muted); display:block;">Attending Physician</small>
+        <strong style="color:var(--text-primary); font-family:var(--font-display); font-size:1.05rem;">{{ record.doctor_signature or ('Dr. ' ~ session.get('full_name', '')) }}</strong>
+      </div>
     </div>
   </div>
-
-  <div class="portal-section-title mt-3"><i class="fa-solid fa-flask"></i> Biomarkers</div>
-  <div class="biomarkers-grid">
-    {% for k, v in rec_dict.biomarkers.items() %}
-    <div class="biomarker-item">
-      <div class="biomarker-name">{{ k }}</div>
-      <div class="biomarker-val">{{ '%.2f' | format(v) if v is number else v }}</div>
-    </div>
-    {% endfor %}
-  </div>
-
-  <div class="fi-title mt-4"><i class="fa-solid fa-user-doctor"></i> Approved Doctor Remarks</div>
-  <p
-    style="color:var(--text-primary);font-size:0.9rem;font-style:italic;background:rgba(255,255,255,0.02);padding:10px;border-left:3px solid var(--cyan-primary);">
-    {{ record.doctor_remarks or "No remarks provided." }}</p>
-
-  <div class="dash-status-item mt-3"><span>Date</span><span>{{ record.created_at.strftime('%d %b %Y, %H:%M') if
-      record.created_at else '—' }}</span></div>
-  <div class="dash-status-item"><span>Status</span><span><span class="status-badge status-{{ record.status }}">{{
-        record.status }}</span></span></div>
-  <div class="dash-status-item"><span>Model Used</span><span>{{ (record.model_version or '—') | replace('_', ' ') |
-      upper }}</span></div>
-
-  <div class="result-disclaimer mt-3">
-    <div class="result-disclaimer-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-    <div><strong>Research Prototype</strong> — For clinical decision support only. All outputs must be verified by a
-      licensed practitioner.</div>
-  </div>
-  <button class="print-result-btn mt-3" onclick="printRecordReportInline({{ record.id }})"><i
-      class="fa-solid fa-print"></i> Print Report</button>
 </div>
 {% endif %}
 {% else %}
@@ -199,7 +387,7 @@
 
 {# ── ADMIN: DASHBOARD ── #}
 {% if section == 'dashboard' %}
-<div class="dash-stats-grid">
+<div class="dash-stats-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
   <div class="dash-stat-card">
     <div class="dash-stat-icon"><i class="fa-solid fa-user-doctor"></i></div>
     <div class="dash-stat-value">{{ stats.total_doctors }}</div>
@@ -217,13 +405,18 @@
   </div>
   <div class="dash-stat-card">
     <div class="dash-stat-icon"><i class="fa-solid fa-notes-medical"></i></div>
-    <div class="dash-stat-value">{{ stats.total_diagnoses }}</div>
-    <div class="dash-stat-label">Total Diagnoses</div>
+    <div class="dash-stat-value">{{ stats.total_predictions }}</div>
+    <div class="dash-stat-label">Total Predictions</div>
   </div>
   <div class="dash-stat-card">
-    <div class="dash-stat-icon"><i class="fa-solid fa-user"></i></div>
-    <div class="dash-stat-value">{{ stats.total_patients }}</div>
-    <div class="dash-stat-label">Registered Patients</div>
+    <div class="dash-stat-icon"><i class="fa-solid fa-folder-open"></i></div>
+    <div class="dash-stat-value">{{ stats.total_cases }}</div>
+    <div class="dash-stat-label">Patient Cases</div>
+  </div>
+  <div class="dash-stat-card ok">
+    <div class="dash-stat-icon"><i class="fa-solid fa-file-invoice"></i></div>
+    <div class="dash-stat-value">{{ stats.generated_reports }}</div>
+    <div class="dash-stat-label">Generated Reports</div>
   </div>
 </div>
 
@@ -346,96 +539,102 @@
   {% endif %}
 </div>
 
-{# ── ADMIN: USERS ── #}
+{# ── ADMIN: DOCTORS (USER MANAGEMENT) ── #}
 {% elif section == 'users' %}
 <div class="portal-card">
-  <div class="portal-section-title"><i class="fa-solid fa-users"></i> User Management</div>
-  <div id="userAlert" class="alert d-none" role="alert"></div>
-  <div class="admin-table-wrap">
-    <table class="admin-table">
+  <div class="portal-section-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="fa-solid fa-user-doctor"></i> Doctor Account Management</span>
+    <input type="text" id="adminDoctorSearch" class="auth-input btn-sm" style="width:240px; padding:6px 12px;" placeholder="Search doctors..." onkeyup="filterAdminDoctorTable()">
+  </div>
+  <div id="userAlert" class="alert d-none mt-2" role="alert"></div>
+  
+  <div class="admin-table-wrap mt-3">
+    <table class="admin-table" id="adminDoctorsTable">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Registered</th>
+          <th>Full Name</th>
+          <th>Email Address</th>
+          <th>License Number</th>
+          <th>Specialization</th>
+          <th>Hospital / Facility</th>
+          <th>Verification Status</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        {% for u in all_users %}
-        <tr>
-          <td style="font-weight:600;color:var(--text-primary);">{{ u.full_name or u.username }}</td>
-          <td>{{ u.email }}</td>
-          <td><span class="status-badge status-{{ u.role if u.role in ['approved'] else 'pending' }}">{{ u.role
-              }}</span></td>
-          <td><span class="status-badge status-{{ u.status }}">{{ u.status }}</span></td>
-          <td>{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
-          <td>
-            {% if u.role == 'doctor' and u.id != session.get('user_id') %}
-            <select class="auth-input user-status-select" style="width:auto;padding:6px 10px;font-size:0.8rem;"
-              data-user-id="{{ u.id }}" onchange="updateUserStatus(this)">
-              <option value="">Change status…</option>
-              <option value="approved" {% if u.status=='approved' %}selected{% endif %}>Approved</option>
-              <option value="pending" {% if u.status=='pending' %}selected{% endif %}>Pending</option>
-              <option value="rejected" {% if u.status=='rejected' %}selected{% endif %}>Rejected</option>
-            </select>
-            {% else %}—{% endif %}
-          </td>
-        </tr>
-        {% endfor %}
+        {% set doctors_list = all_users | selectattr('role', 'equalto', 'doctor') | list %}
+        {% if doctors_list %}
+          {% for doc in doctors_list %}
+          <tr class="admin-doc-row" data-name="{{ doc.full_name | lower }}" data-email="{{ doc.email | lower }}" data-license="{{ doc.license_number | lower if doc.license_number else '' }}">
+            <td style="font-weight:600; color:var(--text-primary);">Dr. {{ doc.full_name }}</td>
+            <td>{{ doc.email }}</td>
+            <td style="font-family:var(--font-mono); font-size:0.8rem; color:var(--cyan-primary);">{{ doc.license_number or '—' }}</td>
+            <td>{{ doc.specialization or '—' }}</td>
+            <td>{{ doc.hospital or '—' }}</td>
+            <td>
+              <span id="manage-status-{{ doc.id }}" class="status-badge status-{{ doc.status }}">{{ doc.status }}</span>
+            </td>
+            <td>
+              <div class="d-flex gap-2">
+                {% if doc.status == 'approved' %}
+                <button data-doc-id="{{ doc.id }}" onclick="toggleDoctorStatus(this.dataset.docId)" id="btn-toggle-{{ doc.id }}" class="btn-action-verify btn-reject" style="background:rgba(255,153,102,0.1); color:#ff9966; border-color:rgba(255,153,102,0.2);">Deactivate</button>
+                {% else %}
+                <button data-doc-id="{{ doc.id }}" onclick="toggleDoctorStatus(this.dataset.docId)" id="btn-toggle-{{ doc.id }}" class="btn-action-verify btn-approve" style="background:rgba(197,231,16,0.1); color:var(--green-ok); border-color:rgba(197,231,16,0.2);">Activate</button>
+                {% endif %}
+                <button data-doc-id="{{ doc.id }}" onclick="deleteDoctorAccount(this.dataset.docId)" class="btn-action-verify btn-reject"><i class="fa-solid fa-trash-can"></i> Delete</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">No registered doctor accounts found.</td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
 </div>
 
-{# ── ADMIN: ACCESS CONTROL ── #}
-{% elif section == 'access' %}
+{# ── ADMIN: DATASETS ── #}
+{% elif section == 'datasets' %}
 <div class="row g-4">
-  <div class="col-12 col-lg-6">
+  <div class="col-12 col-md-8">
     <div class="portal-card h-100">
-      <div class="portal-section-title"><i class="fa-solid fa-user-shield"></i> Super Admin Permissions</div>
-      <ul class="access-list">
-        <li><i class="fa-solid fa-check"></i> Verify doctor credentials</li>
-        <li><i class="fa-solid fa-check"></i> Approve or reject registrations</li>
-        <li><i class="fa-solid fa-check"></i> Manage doctors and users</li>
-        <li><i class="fa-solid fa-check"></i> Monitor system activities</li>
-        <li><i class="fa-solid fa-check"></i> Full diagnostic engine access</li>
-        <li><i class="fa-solid fa-check"></i> View all diagnosis history</li>
-      </ul>
+      <div class="portal-section-title"><i class="fa-solid fa-database"></i> Clinical Datasets</div>
+      <div id="datasetAlert" class="alert d-none" role="alert"></div>
+      <div class="admin-table-wrap mt-2">
+        <table class="admin-table" id="datasetsTable">
+          <thead>
+            <tr>
+              <th>Dataset Filename</th>
+              <th>File Size</th>
+              <th>Records Count</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="datasetsListBody">
+            <tr>
+              <td colspan="4" class="text-center py-3"><i class="fa-solid fa-spinner fa-spin"></i> Loading datasets...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-  <div class="col-12 col-lg-6">
+  <div class="col-12 col-md-4">
     <div class="portal-card h-100">
-      <div class="portal-section-title"><i class="fa-solid fa-user-doctor"></i> Doctor Permissions</div>
-      <div class="access-tier">
-        <strong>Verified Doctors</strong>
-        <ul class="access-list">
-          <li><i class="fa-solid fa-check"></i> Enter patient biomarker data</li>
-          <li><i class="fa-solid fa-check"></i> Run disease diagnosis</li>
-          <li><i class="fa-solid fa-check"></i> View AI explanations</li>
-          <li><i class="fa-solid fa-check"></i> Access diagnosis history &amp; reports</li>
-        </ul>
-      </div>
-      <div class="access-tier mt-3">
-        <strong>Unverified Doctors</strong>
-        <ul class="access-list muted">
-          <li><i class="fa-solid fa-check"></i> Log in and view platform info</li>
-          <li><i class="fa-solid fa-check"></i> Manage profile settings</li>
-          <li><i class="fa-solid fa-xmark"></i> Perform diagnoses (locked)</li>
-          <li><i class="fa-solid fa-xmark"></i> Access diagnostic tools (locked)</li>
-        </ul>
-      </div>
-      <div class="access-tier mt-3">
-        <strong>Registered Patients</strong>
-        <ul class="access-list">
-          <li><i class="fa-solid fa-check"></i> View linked health records</li>
-          <li><i class="fa-solid fa-check"></i> Read diagnosis explanations &amp; reports</li>
-          <li><i class="fa-solid fa-check"></i> Manage personal profile</li>
-          <li><i class="fa-solid fa-xmark"></i> Run diagnoses (physician only)</li>
-        </ul>
-      </div>
+      <div class="portal-section-title"><i class="fa-solid fa-file-arrow-up"></i> Upload Replacement Dataset</div>
+      <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:15px;">
+        Upload a replacement CSV file for model training. The file name must be either <strong>train_data.csv</strong> or <strong>test_data.csv</strong>.
+      </p>
+      <form id="datasetUploadForm" onsubmit="uploadDatasetInline(event)">
+        <div class="auth-form-group">
+          <label class="auth-label">Choose CSV File *</label>
+          <input type="file" id="datasetFileInput" class="auth-input" accept=".csv" required>
+        </div>
+        <button type="submit" class="auth-btn mt-3"><i class="fa-solid fa-cloud-arrow-up"></i> Upload & Replace</button>
+      </form>
     </div>
   </div>
 </div>
@@ -466,16 +665,42 @@
 </div>
 
 <div class="portal-card mt-4">
-  <div class="portal-section-title"><i class="fa-solid fa-microchip"></i> Model Registry Status</div>
+  <div class="portal-section-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="fa-solid fa-microchip"></i> Model Registry & Performance</span>
+    <button onclick="triggerModelRetraining()" class="btn-primary btn-sm" id="btnRetrainModels" style="padding:6px 12px; border-radius:var(--radius-sm);">
+      <i class="fa-solid fa-arrows-spin"></i> Retrain All Models
+    </button>
+  </div>
+  <div id="retrainAlert" class="alert d-none mt-2" role="alert"></div>
+  
   {% if health %}
   <div class="dash-status-item"><span>Models Directory</span><span>{{ health.models_directory }}</span></div>
-  <div class="dash-status-item"><span>Loaded Models</span><span>{{ health.loaded_models | join(', ') or 'None' }}</span>
-  </div>
-  <div class="dash-status-item"><span>Missing Models</span><span>{{ health.missing_models | join(', ') or 'None'
-      }}</span></div>
-  <div class="dash-status-item"><span>Corrupted Models</span><span>{{ health.corrupted_models | join(', ') or 'None'
-      }}</span></div>
+  <div class="dash-status-item"><span>Loaded Models</span><span>{{ health.loaded_models | join(', ') or 'None' }}</span></div>
+  <div class="dash-status-item"><span>Missing Models</span><span>{{ health.missing_models | join(', ') or 'None' }}</span></div>
+  <div class="dash-status-item"><span>Corrupted Models</span><span>{{ health.corrupted_models | join(', ') or 'None' }}</span></div>
   {% endif %}
+  
+  <div class="admin-table-wrap mt-3">
+    <strong style="color:var(--text-primary); font-size:0.9rem; display:block; margin-bottom:8px;">Model Performance Summary</strong>
+    <table class="admin-table" id="adminModelMetricsTable">
+      <thead>
+        <tr>
+          <th>Model Classifier</th>
+          <th>Accuracy Score</th>
+          <th>Precision (W)</th>
+          <th>Recall (W)</th>
+          <th>F1-Score (W)</th>
+          <th>CV Mean</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="modelMetricsBody">
+        <tr>
+          <td colspan="7" class="text-center py-3"><i class="fa-solid fa-spinner fa-spin"></i> Loading metrics...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="portal-card mt-4">
@@ -509,226 +734,6 @@
 </div>
 {% endif %}
 
-{% elif session.get('role') == 'patient' %}
-
-{# ── PATIENT: DASHBOARD ── #}
-{% if section == 'dashboard' %}
-<div class="alert alert-success d-flex align-items-center gap-3 mb-4"
-  style="background:rgba(197,231,16,0.08);border:1px solid rgba(197,231,16,0.3);color:var(--green-ok);">
-  <i class="fa-solid fa-heart-pulse" style="font-size:1.5rem;"></i>
-  <div>
-    <strong>Welcome to your Patient Portal</strong><br>
-    View diagnoses linked to your profile by your healthcare provider. Diagnoses are run by verified physicians only.
-  </div>
-</div>
-<div class="dash-stats-grid">
-  <div class="dash-stat-card">
-    <div class="dash-stat-icon"><i class="fa-solid fa-file-waveform"></i></div>
-    <div class="dash-stat-value">{{ stats.total_records }}</div>
-    <div class="dash-stat-label">Linked Records</div>
-  </div>
-  <div class="dash-stat-card ok">
-    <div class="dash-stat-icon"><i class="fa-solid fa-circle-check"></i></div>
-    <div class="dash-stat-value">Active</div>
-    <div class="dash-stat-label">Account Status</div>
-  </div>
-  {% if patient_profile %}
-  <div class="dash-stat-card">
-    <div class="dash-stat-icon"><i class="fa-solid fa-droplet"></i></div>
-    <div class="dash-stat-value" style="font-size:1rem;">{{ patient_profile.blood_group or '—' }}</div>
-    <div class="dash-stat-label">Blood Group</div>
-  </div>
-  <div class="dash-stat-card">
-    <div class="dash-stat-icon"><i class="fa-solid fa-cake-candles"></i></div>
-    <div class="dash-stat-value" style="font-size:1rem;">{{ patient_profile.date_of_birth.strftime('%d %b %Y') }}</div>
-    <div class="dash-stat-label">Date of Birth</div>
-  </div>
-  {% endif %}
-</div>
-<div class="portal-card mt-4">
-  <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Health Records</div>
-  {% if records %}
-  <div class="admin-table-wrap">
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Condition</th>
-          <th>Confidence</th>
-          <th>Details</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in records[:5] %}
-        <tr>
-          <td>{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</td>
-          <td>{{ r.prediction_label }}</td>
-          <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
-          <td><a href="/portal?section=view_record&record_id={{ r.id }}" class="btn-action-verify btn-approve"><i
-                class="fa-solid fa-eye"></i> View</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="dash-empty"><i class="fa-solid fa-folder-open"></i> No linked health records yet. Records appear here when a
-    verified doctor runs a diagnosis linked to your profile.</p>
-  {% endif %}
-</div>
-
-{# ── PATIENT: PROFILE ── #}
-{% elif section == 'profile' %}
-<div class="portal-card">
-  <div class="portal-section-title"><i class="fa-solid fa-id-card"></i> My Profile</div>
-  <div class="portal-meta-item"><span class="portal-meta-label">Full Name</span><span class="portal-meta-value">{{
-      patient_user.full_name }}</span></div>
-  <div class="portal-meta-item"><span class="portal-meta-label">Email</span><span class="portal-meta-value">{{
-      patient_user.email }}</span></div>
-  {% if patient_profile %}
-  <div class="portal-meta-item"><span class="portal-meta-label">Date of Birth</span><span class="portal-meta-value">{{
-      patient_profile.date_of_birth.strftime('%d %b %Y') }}</span></div>
-  <div class="portal-meta-item"><span class="portal-meta-label">Gender</span><span class="portal-meta-value">{{
-      patient_profile.gender or '—' }}</span></div>
-  <div class="portal-meta-item"><span class="portal-meta-label">Blood Group</span><span class="portal-meta-value">{{
-      patient_profile.blood_group or '—' }}</span></div>
-  <div class="portal-meta-item"><span class="portal-meta-label">Patient ID</span><span class="portal-meta-value"
-      style="font-family:var(--font-mono);font-size:0.8rem;">{{ patient_profile.patient_uuid[:8] }}…</span></div>
-  {% endif %}
-</div>
-
-{# ── PATIENT: RECORDS ── #}
-{% elif section == 'records' %}
-<div class="portal-card">
-  <div class="portal-section-title"><i class="fa-solid fa-file-waveform"></i> My Health Records</div>
-  {% if records %}
-  <div class="admin-table-wrap">
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Condition</th>
-          <th>Confidence</th>
-          <th>Model</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in records %}
-        <tr>
-          <td>{{ r.created_at.strftime('%d %b %Y, %H:%M') if r.created_at else '—' }}</td>
-          <td><strong style="color:var(--cyan-primary);">{{ r.prediction_label }}</strong></td>
-          <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
-          <td>{{ (r.model_version or '—') | replace('_', ' ') | title }}</td>
-          <td><a href="/portal?section=view_record&record_id={{ r.id }}" class="btn-action-verify btn-approve"><i
-                class="fa-solid fa-eye"></i> Details</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="dash-empty"><i class="fa-solid fa-folder-open"></i> No health records linked to your account yet.</p>
-  {% endif %}
-</div>
-
-{# ── PATIENT: REPORTS ── #}
-{% elif section == 'reports' %}
-<div class="portal-card">
-  <div class="portal-section-title"><i class="fa-solid fa-file-medical"></i> My Reports</div>
-  {% if records %}
-  <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">View and print explainable diagnosis
-    reports from your healthcare provider.</p>
-  <div class="row g-3">
-    {% for r in records %}
-    <div class="col-12 col-md-6 col-lg-4">
-      <div class="report-card">
-        <div class="report-card-date">{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</div>
-        <div class="report-card-diag">{{ r.prediction_label }}</div>
-        <div class="report-card-conf">{{ '%.1f' | format(r.confidence_score) }}% confidence</div>
-        <a href="/portal?section=view_record&record_id={{ r.id }}" class="btn-outline btn-sm w-100 mt-2 text-center"
-          style="display:inline-block;text-decoration:none;">
-          <i class="fa-solid fa-eye"></i> View Report
-        </a>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <p class="dash-empty">No reports available yet.</p>
-  {% endif %}
-</div>
-{# ── PATIENT: DOCTORS ── #}
-{% elif section == 'doctors' %}
-<div class="row g-4">
-  <div class="col-12 col-md-6">
-    <div class="portal-card h-100">
-      <div class="portal-section-title"><i class="fa-solid fa-user-doctor"></i> My Doctors</div>
-      <div id="patientDocsAlert" class="alert d-none" role="alert"></div>
-      {% if connections %}
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Doctor</th>
-              <th>Facility</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for conn in connections %}
-            <tr id="conn-row-{{ conn.id }}">
-              <td style="font-weight:600;color:var(--text-primary);">Dr. {{ conn.doctor.full_name }}</td>
-              <td>{{ conn.doctor.hospital or '—' }}</td>
-              <td>
-                <span class="status-badge status-{{ conn.status }}">{{ conn.status }}</span>
-              </td>
-              <td>
-                <button class="btn-action-verify btn-reject"
-                  onclick="disconnectDoctor({{ conn.id }})">Disconnect</button>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="dash-empty">You have not linked any healthcare providers yet.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="col-12 col-md-6">
-    <div class="portal-card h-100">
-      <div class="portal-section-title"><i class="fa-solid fa-circle-plus"></i> Request Healthcare Link</div>
-      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:16px;">
-        Select a verified physician from the dropdown to share your clinical biomarker updates and view patient-linked
-        AI diagnosis reports.
-      </p>
-      <div id="requestDocAlert" class="alert d-none" role="alert"></div>
-      {% if available_doctors %}
-      <div class="auth-form-group">
-        <label class="auth-label">Choose Doctor</label>
-        <select id="selectDoctor" class="auth-input">
-          <option value="">Choose a doctor...</option>
-          {% for doc in available_doctors %}
-          <option value="{{ doc.id }}">Dr. {{ doc.full_name }} ({{ doc.specialization or 'General Practitioner' }} — {{
-            doc.hospital or 'Unknown Facility' }})</option>
-          {% endfor %}
-        </select>
-      </div>
-      <button class="auth-btn mt-3" onclick="requestDoctorLink()"><i class="fa-solid fa-paper-plane"></i> Send Link
-        Request</button>
-      {% else %}
-      <p class="text-muted" style="font-size:0.85rem;">No new verified doctors are currently available to request links.
-      </p>
-      {% endif %}
-    </div>
-  </div>
-</div>
-{% endif %}
-
 {% elif session.get('role') == 'doctor' %}
 
 {# ── DOCTOR: DASHBOARD ── #}
@@ -756,31 +761,31 @@
 
 <div class="dash-stats-grid">
   <div class="dash-stat-card">
-    <div class="dash-stat-icon"><i class="fa-solid fa-notes-medical"></i></div>
+    <div class="dash-stat-icon"><i class="fa-solid fa-users"></i></div>
+    <div class="dash-stat-value">{{ stats.total_patients }}</div>
+    <div class="dash-stat-label">Total Patient Cases</div>
+  </div>
+  <div class="dash-stat-card ok">
+    <div class="dash-stat-icon"><i class="fa-solid fa-file-invoice"></i></div>
     <div class="dash-stat-value">{{ stats.total_diagnoses }}</div>
-    <div class="dash-stat-label">Diagnoses Completed</div>
+    <div class="dash-stat-label">Generated Reports</div>
+  </div>
+  <div class="dash-stat-card warn">
+    <div class="dash-stat-icon"><i class="fa-solid fa-clock"></i></div>
+    <div class="dash-stat-value">0</div>
+    <div class="dash-stat-label">Pending Cases</div>
   </div>
   <div class="dash-stat-card ok">
     <div class="dash-stat-icon"><i class="fa-solid fa-shield-halved"></i></div>
     <div class="dash-stat-value">{{ doctor.status | capitalize }}</div>
     <div class="dash-stat-label">Account Status</div>
   </div>
-  <div class="dash-stat-card">
-    <div class="dash-stat-icon"><i class="fa-solid fa-hospital"></i></div>
-    <div class="dash-stat-value" style="font-size:1rem;">{{ doctor.hospital or 'Not set' }}</div>
-    <div class="dash-stat-label">Facility</div>
-  </div>
-  <div class="dash-stat-card">
-    <div class="dash-stat-icon"><i class="fa-solid fa-stethoscope"></i></div>
-    <div class="dash-stat-value" style="font-size:1rem;">{{ doctor.specialization or 'General' }}</div>
-    <div class="dash-stat-label">Specialization</div>
-  </div>
 </div>
 
 <div class="row g-4 mt-1">
   <div class="col-12 col-lg-8">
     <div class="portal-card">
-      <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Diagnoses</div>
+      <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Predictions</div>
       {% if records %}
       <div class="admin-table-wrap">
         <table class="admin-table">
@@ -1014,365 +1019,179 @@
 {# ── DOCTOR: PATIENTS ── #}
 {% elif section == 'patients' %}
 <div class="portal-card">
-  <div class="portal-section-title"><i class="fa-solid fa-users"></i> Patient Connections</div>
-  <div id="doctorPatientsAlert" class="alert d-none" role="alert"></div>
+  <div class="portal-section-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="fa-solid fa-users"></i> Patient Case Management</span>
+    <button class="btn-primary btn-sm" onclick="openCreatePatientModal()">
+      <i class="fa-solid fa-user-plus"></i> New Patient Case
+    </button>
+  </div>
+  
+  <div id="patientManagerAlert" class="alert d-none mt-3" role="alert"></div>
 
-  <div class="row g-4">
-    <div class="col-12 col-lg-6">
-      <div class="portal-card h-100" style="margin-bottom: 0;">
-        <h4 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:16px;color:var(--text-primary);">
-          <i class="fa-solid fa-hourglass-half" style="color:var(--amber-warn);margin-right:8px;"></i> Connection
-          Requests
-        </h4>
-        {% if pending_connections %}
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Patient Name</th>
-                <th>Date of Birth</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for conn in pending_connections %}
-              <tr id="req-row-{{ conn.id }}">
-                <td style="font-weight:600;color:var(--text-primary);">{{ conn.patient.first_name }} {{
-                  conn.patient.last_name }}</td>
-                <td>{{ conn.patient.date_of_birth.strftime('%d %b %Y') }}</td>
-                <td>
-                  <div class="d-flex gap-2">
-                    <button onclick="respondConnection({{ conn.id }}, 'approve')"
-                      class="btn-action-verify btn-approve">Approve</button>
-                    <button onclick="respondConnection({{ conn.id }}, 'reject')"
-                      class="btn-action-verify btn-reject">Reject</button>
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <p class="dash-empty" style="padding: 20px 0;"><i class="fa-solid fa-circle-check"
-            style="font-size:1.5rem;margin-bottom:6px;"></i> No pending connection requests.</p>
-        {% endif %}
+  <!-- Search & Filter Bar -->
+  <div class="row g-3 my-2 align-items-center">
+    <div class="col-12 col-md-6">
+      <div class="search-box-wrap" style="position:relative;">
+        <input type="text" id="patientSearchInput" class="auth-input ps-5" placeholder="Search patients by name or ID..." onkeyup="filterPatientTable()">
+        <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:20px; top:16px; color:var(--text-secondary);"></i>
       </div>
     </div>
-
-    <div class="col-12 col-lg-6">
-      <div class="portal-card h-100" style="margin-bottom: 0;">
-        <h4 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:16px;color:var(--text-primary);">
-          <i class="fa-solid fa-circle-check" style="color:var(--green-ok);margin-right:8px;"></i> Active Patients
-        </h4>
-        {% if approved_connections %}
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Patient Name</th>
-                <th>Patient ID</th>
-                <th>Gender / DOB</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for conn in approved_connections %}
-              <tr id="active-row-{{ conn.id }}">
-                <td style="font-weight:600;color:var(--text-primary);">{{ conn.patient.first_name }} {{
-                  conn.patient.last_name }}</td>
-                <td style="font-family:var(--font-mono);font-size:0.75rem;">{{ conn.patient.patient_uuid[:8] }}…</td>
-                <td>{{ conn.patient.gender or '—' }} ({{ conn.patient.date_of_birth.strftime('%Y') }})</td>
-                <td>
-                  <button onclick="disconnectDoctor({{ conn.id }}, true)"
-                    class="btn-action-verify btn-reject">Disconnect</button>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <p class="dash-empty" style="padding: 20px 0;">No active patient connections. Patients must add you from their
-          portal.</p>
-        {% endif %}
+    <div class="col-12 col-md-6 text-md-end">
+      <div class="btn-group" role="group">
+        <button type="button" class="btn-outline btn-sm active" id="btnShowActive" onclick="toggleArchivedView(false)">Active Cases</button>
+        <button type="button" class="btn-outline btn-sm" id="btnShowArchived" onclick="toggleArchivedView(true)">Archived Cases</button>
       </div>
     </div>
   </div>
 
-  <div class="row g-4 mt-4">
-    <div class="col-12 col-lg-6">
-      <div class="portal-card h-100" style="margin-bottom: 0;">
-        <h4 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:16px;color:var(--text-primary);">
-          <i class="fa-solid fa-microscope" style="color:var(--purple-neural);margin-right:8px;"></i> Technician Link
-          Requests
-        </h4>
-        {% if pending_tech_connections %}
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Technician Name</th>
-                <th>Email</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for conn in pending_tech_connections %}
-              <tr>
-                <td style="font-weight:600;color:var(--text-primary);">{{ conn.technician.full_name }}</td>
-                <td>{{ conn.technician.email }}</td>
-                <td>
-                  <div class="d-flex gap-2">
-                    <button onclick="respondTechnician({{ conn.id }}, 'approve')"
-                      class="btn-action-verify btn-approve">Approve</button>
-                    <button onclick="respondTechnician({{ conn.id }}, 'reject')"
-                      class="btn-action-verify btn-reject">Reject</button>
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <p class="dash-empty" style="padding: 20px 0;"><i class="fa-solid fa-circle-check"
-            style="font-size:1.5rem;margin-bottom:6px;"></i> No pending technician requests.</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="col-12 col-lg-6">
-      <div class="portal-card h-100" style="margin-bottom: 0;">
-        <h4 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:16px;color:var(--text-primary);">
-          <i class="fa-solid fa-check-double" style="color:var(--green-ok);margin-right:8px;"></i> Approved Technicians
-        </h4>
-        {% if approved_tech_connections %}
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Technician Name</th>
-                <th>Email</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for conn in approved_tech_connections %}
-              <tr>
-                <td style="font-weight:600;color:var(--text-primary);">{{ conn.technician.full_name }}</td>
-                <td>{{ conn.technician.email }}</td>
-                <td>
-                  <button onclick="disconnectTechnician({{ conn.id }})"
-                    class="btn-action-verify btn-reject">Disconnect</button>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <p class="dash-empty" style="padding: 20px 0;">No approved lab technicians linked.</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-{% elif session.get('role') == 'technician' %}
-
-{# ── TECHNICIAN: DASHBOARD ── #}
-{% if section == 'dashboard' %}
-<div class="dash-stats-grid">
-  <div class="dash-stat-card">
-    <div class="dash-stat-icon"><i class="fa-solid fa-file-waveform"></i></div>
-    <div class="dash-stat-value">{{ records | length }}</div>
-    <div class="dash-stat-label">Drafts Submitted</div>
-  </div>
-  <div class="dash-stat-card ok">
-    <div class="dash-stat-icon"><i class="fa-solid fa-user-doctor"></i></div>
-    <div class="dash-stat-value">{{ connections | selectattr('status', 'equalto', 'approved') | list | length }}</div>
-    <div class="dash-stat-label">Connected Doctors</div>
-  </div>
-  <div class="dash-stat-card warn">
-    <div class="dash-stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
-    <div class="dash-stat-value">{{ connections | selectattr('status', 'equalto', 'pending') | list | length }}</div>
-    <div class="dash-stat-label">Pending Links</div>
-  </div>
-</div>
-
-<div class="row g-4 mt-1">
-  <div class="col-12 col-md-6">
-    <div class="portal-card h-100">
-      <div class="portal-section-title"><i class="fa-solid fa-user-doctor"></i> Doctor Link Requests</div>
-      <div id="techDocsAlert" class="alert d-none" role="alert"></div>
-      {% if connections %}
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Doctor</th>
-              <th>Facility</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for conn in connections %}
-            <tr>
-              <td style="font-weight:600;color:var(--text-primary);">Dr. {{ conn.doctor.full_name }}</td>
-              <td>{{ conn.doctor.hospital or '—' }}</td>
-              <td><span class="status-badge status-{{ conn.status }}">{{ conn.status }}</span></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="dash-empty">You are not connected to any doctors yet.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="col-12 col-md-6">
-    <div class="portal-card h-100">
-      <div class="portal-section-title"><i class="fa-solid fa-circle-plus"></i> Link with a Doctor</div>
-      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:16px;">
-        Select a verified physician to request authorization to submit biomarker values for their patients.
-      </p>
-      <div id="requestDocAlert" class="alert d-none" role="alert"></div>
-      {% if available_doctors %}
-      <div class="auth-form-group">
-        <label class="auth-label">Choose Doctor</label>
-        <select id="selectDoctor" class="auth-input">
-          <option value="">Choose a doctor...</option>
-          {% for doc in available_doctors %}
-          <option value="{{ doc.id }}">Dr. {{ doc.full_name }} ({{ doc.specialization or 'GP' }} — {{ doc.hospital or
-            'Unknown' }})</option>
-          {% endfor %}
-        </select>
-      </div>
-      <button class="auth-btn mt-3" onclick="requestDoctorLinkTech()"><i class="fa-solid fa-paper-plane"></i> Send
-        Request</button>
-      {% else %}
-      <p class="text-muted" style="font-size:0.85rem;">No new verified doctors are currently available to link.</p>
-      {% endif %}
-    </div>
-  </div>
-</div>
-
-<div class="portal-card mt-4">
-  <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Submitted Drafts History</div>
-  {% if records %}
-  <div class="admin-table-wrap">
-    <table class="admin-table">
+  <!-- Patient Table -->
+  <div class="admin-table-wrap mt-3">
+    <table class="admin-table" id="patientsTable">
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Reference</th>
-          <th>Assigned Doctor</th>
-          <th>Status</th>
-          <th>Action</th>
+          <th>Patient ID</th>
+          <th>Full Name</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>Clinical Notes</th>
+          <th>Created Date</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        {% for r in records %}
-        <tr>
-          <td>{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</td>
-          <td>{{ r.patient_reference }}</td>
-          <td>Dr. {{ r.author.full_name if r.author else '—' }}</td>
-          <td><span class="status-badge status-{{ r.status }}">{{ r.status }}</span></td>
-          <td><a href="/portal?section=view_record&record_id={{ r.id }}" class="btn-action-verify btn-approve"><i
-                class="fa-solid fa-eye"></i> View</a></td>
-        </tr>
-        {% endfor %}
+        {% if patients %}
+          {% for p in patients %}
+          <tr class="patient-row {% if p.is_archived %}archived-row d-none{% else %}active-row{% endif %}" id="patient-row-{{ p.id }}" data-id="{{ p.id }}" data-name="{{ p.full_name }}" data-uuid="{{ p.patient_uuid }}">
+            <td style="font-family:var(--font-mono); font-size:0.8rem; font-weight:600; color:var(--cyan-primary);">{{ p.patient_uuid }}</td>
+            <td style="font-weight:600; color:var(--text-primary);">{{ p.full_name }}</td>
+            <td>{{ p.age }} yrs</td>
+            <td><span class="status-badge" style="background:rgba(255,255,255,0.05);">{{ p.gender }}</span></td>
+            <td class="patient-notes-col" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ p.clinical_notes or '' }}">{{ p.clinical_notes or '—' }}</td>
+            <td>{{ p.created_at.strftime('%d %b %Y') if p.created_at else '—' }}</td>
+            <td>
+              <div class="d-flex gap-2">
+                <a href="/predict?patient_id={{ p.id }}" class="btn-action-verify btn-approve" title="Run AI Diagnosis"><i class="fa-solid fa-stethoscope"></i> Predict</a>
+                <button data-id="{{ p.id }}" data-name="{{ p.full_name | escape }}" data-dob="{{ p.date_of_birth.strftime('%Y-%m-%d') if p.date_of_birth else '' }}" data-gender="{{ p.gender }}" data-notes="{{ (p.clinical_notes or '') | escape }}" onclick="openEditPatientModal(this.dataset.id, this.dataset.name, this.dataset.dob, this.dataset.gender, this.dataset.notes)" class="btn-action-verify btn-approve" style="background:rgba(255,255,255,0.05); color:var(--text-primary); border-color:rgba(255,255,255,0.1);"><i class="fa-solid fa-pen-to-square"></i></button>
+                {% if p.is_archived %}
+                  <button data-id="{{ p.id }}" onclick="archivePatientCase(this.dataset.id, false)" class="btn-action-verify btn-approve" style="background:rgba(197,231,16,0.1); color:var(--green-ok); border-color:rgba(197,231,16,0.2);"><i class="fa-solid fa-box-open"></i> Restore</button>
+                {% else %}
+                  <button data-id="{{ p.id }}" onclick="archivePatientCase(this.dataset.id, true)" class="btn-action-verify btn-reject"><i class="fa-solid fa-box-archive"></i> Archive</button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr id="emptyPatientsRow">
+            <td colspan="7" class="text-center py-4 text-muted">No patient cases found. Click "New Patient Case" to create one.</td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
-  {% else %}
-  <p class="dash-empty">No drafts submitted yet.</p>
-  {% endif %}
 </div>
+{% endif %}
 
-{# ── TECHNICIAN: PROFILE ── #}
-{% elif section == 'profile' %}
-<div class="portal-card">
-  <div class="portal-section-title"><i class="fa-solid fa-id-card"></i> Technician Profile</div>
-  <div class="portal-meta-item"><span class="portal-meta-label">Full Name</span><span class="portal-meta-value">{{
-      session.get('full_name') }}</span></div>
-  <div class="portal-meta-item"><span class="portal-meta-label">Email</span><span class="portal-meta-value">{{
-      session.get('email') }}</span></div>
-  <div class="portal-meta-item"><span class="portal-meta-label">Role</span><span class="portal-meta-value">Clinical Lab
-      Technician</span></div>
-</div>
+{% endif %}
 
-{# ── TECHNICIAN: DIAGNOSE ── #}
-{% elif section == 'diagnose' %}
-<div class="portal-card">
-  <div class="portal-section-title"><i class="fa-solid fa-notes-medical"></i> Clinical Biomarker Entry</div>
-  <div id="diagnoseAlert" class="alert d-none" role="alert"></div>
+{% endif %}
 
-  <form id="technicianSubmitForm">
-    <div class="row g-3 stagger-children">
-      <div class="col-12 col-md-6">
-        <div class="auth-form-group">
-          <label class="auth-label">Select Assigned Doctor *</label>
-          {% set approved_docs = connections | selectattr('status', 'equalto', 'approved') | list %}
-          <select id="techSelectDoctor" class="auth-input" required onchange="loadDoctorPatients(this.value)">
-            <option value="">Choose a doctor...</option>
-            {% for conn in approved_docs %}
-            <option value="{{ conn.doctor.id }}">Dr. {{ conn.doctor.full_name }}</option>
-            {% endfor %}
-          </select>
-        </div>
+{% endblock %}
+
+{% block extra_body %}
+<!-- CREATE PATIENT MODAL -->
+<div class="modal fade" id="createPatientModal" tabindex="-1" aria-labelledby="createPatientModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="max-width:100%; border:1px solid var(--bg-border) !important; background:var(--bg-surface) !important; color:var(--text-primary) !important; box-shadow:0 10px 30px rgba(0,0,0,0.6); padding: 24px; border-radius: var(--radius-lg); position: relative; z-index: 2;">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="m-0" id="createPatientModalLabel" style="color:var(--text-primary) !important; font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; letter-spacing: -0.02em;">Create Patient Case</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="col-12 col-md-6">
-        <div class="auth-form-group">
-          <label class="auth-label">Select Patient *</label>
-          <select id="techSelectPatient" class="auth-input" required disabled onchange="handlePatientSelection(this)">
-            <option value="">Choose a doctor first...</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="row g-3 mt-1">
-      <div class="col-12 col-md-6">
-        <div class="auth-form-group">
-          <label class="auth-label">Patient Name</label>
-          <input type="text" id="techPatientName" class="auth-input" readonly
-            placeholder="Select patient to auto-populate">
-        </div>
-      </div>
-      <div class="col-12 col-md-6">
-        <div class="auth-form-group">
-          <label class="auth-label">Record Reference</label>
-          <input type="text" id="techPatientReference" class="auth-input" readonly
-            placeholder="Generating reference...">
-          <div class="auth-field-hint mt-2" id="techRefPreview">
-            Preview: SHS-...
+      <div class="modal-body">
+        <div id="modalCreateAlert" class="alert alert-danger d-none" role="alert"></div>
+        <form id="createPatientForm">
+          <div class="auth-form-group">
+            <label class="auth-label" style="color:var(--text-secondary) !important;">Patient ID (Auto-Generated)</label>
+            <input type="text" id="newPatientUUID" class="auth-input" style="font-family:var(--font-mono); color:var(--text-secondary); background:rgba(197, 231, 16, 0.02); border:1px solid rgba(197, 231, 16, 0.08); cursor: not-allowed;" disabled>
           </div>
-        </div>
+          <div class="auth-form-group">
+            <label for="newPatientName" class="auth-label" style="color:var(--text-secondary) !important;">Full Name *</label>
+            <input type="text" id="newPatientName" name="full_name" class="auth-input" placeholder="e.g. John Doe" style="color:var(--text-primary); background:var(--bg-void); border:1px solid var(--bg-border);" required>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="auth-form-group">
+                <label for="newPatientDOB" class="auth-label" style="color:var(--text-secondary) !important;">Date of Birth *</label>
+                <input type="date" id="newPatientDOB" name="date_of_birth" class="auth-input" style="color:var(--text-primary); background:var(--bg-void); border:1px solid var(--bg-border);" required>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="auth-form-group">
+                <label for="newPatientGender" class="auth-label" style="color:var(--text-secondary) !important;">Gender *</label>
+                <select id="newPatientGender" name="gender" class="auth-input" style="color:var(--text-primary); background:var(--bg-void); border:1px solid var(--bg-border); cursor: pointer;" required>
+                  <option value="" style="background:var(--bg-surface); color:var(--text-primary);">Select...</option>
+                  <option value="Male" style="background:var(--bg-surface); color:var(--text-primary);">Male</option>
+                  <option value="Female" style="background:var(--bg-surface); color:var(--text-primary);">Female</option>
+                  <option value="Other" style="background:var(--bg-surface); color:var(--text-primary);">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="auth-form-group">
+            <label for="newPatientNotes" class="auth-label" style="color:var(--text-secondary) !important;">Clinical Notes (Optional)</label>
+            <textarea id="newPatientNotes" name="clinical_notes" class="auth-input" rows="3" placeholder="Symptom onset, medical history, etc." style="color:var(--text-primary); background:var(--bg-void); border:1px solid var(--bg-border);"></textarea>
+          </div>
+          <button type="submit" class="auth-btn mt-3" id="savePatientBtn" style="background:var(--cyan-primary); color:var(--bg-void); font-weight:600;">Create Case</button>
+        </form>
       </div>
     </div>
-
-    <div class="fi-title mt-4"><i class="fa-solid fa-flask"></i> Clinical Biomarkers (Normalised scores 0.00 to 1.00)
-    </div>
-    <div id="biomarkerFieldsArea" class="row g-3">
-      <!-- populated dynamically by JavaScript -->
-      <p style="color:var(--text-secondary);padding-left:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading
-        biomarker registry...</p>
-    </div>
-
-    <button type="submit" class="auth-btn mt-4"><i class="fa-solid fa-paper-plane"></i> Submit Draft Diagnosis
-      Report</button>
-  </form>
+  </div>
 </div>
-{% endif %}
 
-{% endif %}
-{% endif %}
-
+<!-- EDIT PATIENT MODAL -->
+<div class="modal fade" id="editPatientModal" tabindex="-1" aria-labelledby="editPatientModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="max-width:100%; border:1px solid var(--bg-border) !important; background:var(--bg-surface) !important; color:var(--text-primary) !important; box-shadow:0 10px 30px rgba(0,0,0,0.6); padding: 24px; border-radius: var(--radius-lg); position: relative; z-index: 2;">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="m-0" id="editPatientModalLabel" style="color:var(--text-primary) !important; font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; letter-spacing: -0.02em;">Edit Patient Case</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="modalEditAlert" class="alert alert-danger d-none" role="alert"></div>
+        <form id="editPatientForm">
+          <input type="hidden" id="editPatientId">
+          <div class="auth-form-group">
+            <label for="editPatientName" class="auth-label" style="color:var(--text-secondary) !important;">Full Name *</label>
+            <input type="text" id="editPatientName" name="full_name" class="auth-input" style="color:var(--text-primary); background:var(--bg-void); border:1px solid var(--bg-border);" required>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="auth-form-group">
+                <label for="editPatientDOB" class="auth-label" style="color:var(--text-secondary) !important;">Date of Birth *</label>
+                <input type="date" id="editPatientDOB" name="date_of_birth" class="auth-input" style="color:var(--text-primary); background:var(--bg-void); border:1px solid var(--bg-border);" required>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="auth-form-group">
+                <label for="editPatientGender" class="auth-label" style="color:var(--text-secondary) !important;">Gender *</label>
+                <select id="editPatientGender" name="gender" class="auth-input" style="color:var(--text-primary); background:var(--bg-void); border:1px solid var(--bg-border); cursor: pointer;" required>
+                  <option value="Male" style="background:var(--bg-surface); color:var(--text-primary);">Male</option>
+                  <option value="Female" style="background:var(--bg-surface); color:var(--text-primary);">Female</option>
+                  <option value="Other" style="background:var(--bg-surface); color:var(--text-primary);">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="auth-form-group">
+            <label for="editPatientNotes" class="auth-label" style="color:var(--text-secondary) !important;">Clinical Notes (Optional)</label>
+            <textarea id="editPatientNotes" name="clinical_notes" class="auth-input" rows="3" style="color:var(--text-primary); background:var(--bg-void); border:1px solid var(--bg-border);"></textarea>
+          </div>
+          <button type="submit" class="auth-btn mt-3" id="updatePatientBtn" style="background:var(--cyan-primary); color:var(--bg-void); font-weight:600;">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block portal_scripts %}
@@ -1572,352 +1391,101 @@
     }
   });
 
-  async function loadDoctorPatients(doctorId) {
-    const patientSelect = document.getElementById("techSelectPatient");
-    if (!doctorId) {
-      patientSelect.innerHTML = `<option value="">Choose a doctor first...</option>`;
-      patientSelect.disabled = true;
-      return;
-    }
-    patientSelect.innerHTML = `<option value="">Loading patients...</option>`;
-    patientSelect.disabled = true;
-
-    try {
-      const res = await fetch(`/api/doctor/${doctorId}/patients`);
-      const data = await res.json();
-      if (!res.ok) {
-        patientSelect.innerHTML = `<option value="">Failed to load patients</option>`;
-        return;
-      }
-      if (data.patients && data.patients.length) {
-        let html = `<option value="">Choose a patient...</option>`;
-        data.patients.forEach(p => {
-          html += `<option value="${p.id}" data-name="${p.first_name} ${p.last_name}">${p.first_name} ${p.last_name} (${p.email})</option>`;
-        });
-        patientSelect.innerHTML = html;
-        patientSelect.disabled = false;
-      } else {
-        patientSelect.innerHTML = `<option value="">No patients linked to this doctor</option>`;
-      }
-    } catch (err) {
-      patientSelect.innerHTML = `<option value="">Error loading patients</option>`;
+  function toggleDiagnosisOverride(val, predictionLabel) {
+    const input = document.getElementById("finalDiagnosisLabel");
+    if (!input) return;
+    if (val === "accept") {
+      input.value = predictionLabel;
+      input.disabled = true;
+    } else {
+      input.value = "";
+      input.disabled = false;
+      input.focus();
     }
   }
 
-  function handlePatientSelection(select) {
-    const selectedOpt = select.options[select.selectedIndex];
-    const nameField = document.getElementById("techPatientName");
-    const refField = document.getElementById("techPatientReference");
-    const preview = document.getElementById("techRefPreview");
-
-    if (!select.value) {
-      nameField.value = "";
-      refField.value = "";
-      preview.textContent = "Preview: SHS-...";
-      return;
+  async function generateAIExplanationInline(id) {
+    const btn = document.querySelector(`[onclick="generateAIExplanationInline(${id})"]`);
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating...`;
     }
-
-    const pName = selectedOpt.dataset.name;
-    nameField.value = pName;
-
-    // Generate reference
-    const nameParts = pName.trim().split(" ");
-    const init1 = nameParts[0][0].toUpperCase();
-    const init2 = nameParts[nameParts.length - 1][0].toUpperCase();
-    const randSuffix = Math.floor(Math.random() * 16777215).toString(16).toUpperCase().padStart(6, "0");
-    const recordRef = `SHS-${init1}${init2}-${randSuffix}`;
-
-    refField.value = recordRef;
-    preview.textContent = "Preview: " + recordRef;
-  }
-
-  async function requestDoctorLinkTech() {
-    const doctorId = document.getElementById("selectDoctor").value;
-    const alertBox = document.getElementById("requestDocAlert");
-    if (!doctorId) {
-      alertBox.textContent = "Please select a doctor.";
-      alertBox.className = "alert alert-warning";
-      return;
-    }
-    alertBox.className = "alert d-none";
     try {
-      const res = await fetch("/api/technician/connect", {
+      const res = await fetch(`/api/history/${id}/generate-explanation`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doctor_id: parseInt(doctorId) })
+        headers: { "Content-Type": "application/json" }
       });
       const data = await res.json();
       if (!res.ok) {
-        alertBox.textContent = data.error || "Request failed.";
-        alertBox.className = "alert alert-danger";
+        alert(data.error || "Failed to generate explanation.");
         return;
       }
-      alertBox.textContent = data.message;
-      alertBox.className = "alert alert-success";
-      setTimeout(() => location.reload(), 1000);
+      const textEl = document.getElementById("modalAIExplanation");
+      if (textEl) {
+        textEl.value = data.explanation;
+      }
     } catch (err) {
-      alertBox.textContent = "Network error.";
-      alertBox.className = "alert alert-danger";
+      alert("Network error generating explanation.");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Explanation`;
+      }
     }
   }
 
-  async function respondTechnician(connectionId, action) {
-    const alertBox = document.getElementById("doctorPatientsAlert");
-    alertBox.className = "alert d-none";
-    try {
-      const res = await fetch("/api/doctor/respond-technician", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connection_id: connectionId, action: action })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alertBox.textContent = data.error || "Response failed.";
-        alertBox.className = "alert alert-danger";
-        return;
-      }
-      alertBox.textContent = data.message;
-      alertBox.className = "alert alert-success";
-      setTimeout(() => location.reload(), 1000);
-    } catch (err) {
-      alertBox.textContent = "Network error.";
-      alertBox.className = "alert alert-danger";
-    }
-  }
+  async function finalizeDiagnosisInline(id) {
+    const finalDiagnosis = document.getElementById("finalDiagnosisLabel").value.trim();
+    const observations = document.getElementById("modalObservations").value.trim();
+    const treatmentNotes = document.getElementById("modalTreatmentNotes").value.trim();
+    const aiExplanation = document.getElementById("modalAIExplanation").value.trim();
+    const signature = document.getElementById("modalDoctorSignature").value.trim();
+    const model = document.getElementById("modalSelectModel").value;
 
-  async function verifyDoctor(doctorId, action) {
-    const alertBox = document.getElementById("verifyAlert");
-    if (!alertBox) return;
-    alertBox.className = "alert d-none";
-    try {
-      const res = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doctor_id: doctorId, action: action })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alertBox.textContent = data.error || "Verification update failed.";
-        alertBox.className = "alert alert-danger";
-        return;
-      }
-      const badge = document.getElementById("status-badge-" + doctorId);
-      const actionCell = document.getElementById("actions-" + doctorId);
-      if (badge) { badge.textContent = data.doctor.status; badge.className = "status-badge status-" + data.doctor.status; }
-      if (actionCell) actionCell.innerHTML = '<span class="text-muted" style="font-size:0.8rem;">No action required</span>';
-      alertBox.textContent = "Status updated to " + data.doctor.status + ".";
-      alertBox.className = "alert alert-success";
-    } catch (err) {
-      alertBox.textContent = "Network error.";
-      alertBox.className = "alert alert-danger";
-    }
-  }
-
-  async function updateUserStatus(select) {
-    const userId = select.dataset.userId;
-    const status = select.value;
-    if (!status) return;
-    const alertBox = document.getElementById("userAlert");
-    try {
-      const res = await fetch("/api/auth/users/manage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: parseInt(userId), status: status })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (alertBox) { alertBox.textContent = data.error; alertBox.className = "alert alert-danger"; }
-        return;
-      }
-      if (alertBox) { alertBox.textContent = "User status updated."; alertBox.className = "alert alert-success"; }
-      setTimeout(() => location.reload(), 800);
-    } catch (err) {
-      if (alertBox) { alertBox.textContent = "Network error."; alertBox.className = "alert alert-danger"; }
-    }
-  }
-
-  const reuploadForm = document.getElementById("reuploadForm");
-  if (reuploadForm) {
-    reuploadForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const alertBox = document.getElementById("reuploadAlert");
-      const formData = new FormData(reuploadForm);
-      try {
-        const res = await fetch("/api/auth/reupload", { method: "POST", body: formData });
-        const data = await res.json();
-        if (!res.ok) {
-          alertBox.textContent = data.error || "Upload failed.";
-          alertBox.className = "alert alert-danger";
-          return;
-        }
-        alertBox.textContent = data.message;
-        alertBox.className = "alert alert-success";
-        setTimeout(() => location.reload(), 1500);
-      } catch (err) {
-        alertBox.textContent = "Network error.";
-        alertBox.className = "alert alert-danger";
+    const sections = [];
+    const sectionIds = [
+      'patient', 'biomarkers', 'ml_pred', 'confidence', 'final_diag', 'ai_exp', 'doctor_notes', 'signature', 'logo'
+    ];
+    sectionIds.forEach(sec => {
+      const el = document.getElementById(`pdfSec_${sec}`);
+      if (el && el.checked) {
+        sections.push(sec);
       }
     });
-  }
 
-  async function requestDoctorLink() {
-    const doctorId = document.getElementById("selectDoctor").value;
-    const alertBox = document.getElementById("requestDocAlert");
-    if (!doctorId) {
-      alertBox.textContent = "Please select a doctor.";
-      alertBox.className = "alert alert-warning";
+    if (!finalDiagnosis) {
+      alert("Final Diagnosis Label is required.");
       return;
     }
-    alertBox.className = "alert d-none";
-    try {
-      const res = await fetch("/api/auth/patient/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doctor_id: parseInt(doctorId) })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alertBox.textContent = data.error || "Request failed.";
-        alertBox.className = "alert alert-danger";
-        return;
-      }
-      alertBox.textContent = data.message;
-      alertBox.className = "alert alert-success";
-      setTimeout(() => location.reload(), 1000);
-    } catch (err) {
-      alertBox.textContent = "Network error.";
-      alertBox.className = "alert alert-danger";
+    if (!signature) {
+      alert("Doctor Signature is required.");
+      return;
     }
-  }
-
-  async function disconnectDoctor(connectionId, isDoctor = false) {
-    if (!confirm("Are you sure you want to disconnect this connection?")) return;
-    const alertBox = document.getElementById(isDoctor ? "doctorPatientsAlert" : "patientDocsAlert");
-    if (alertBox) alertBox.className = "alert d-none";
-    try {
-      const res = await fetch("/api/auth/patient/disconnect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connection_id: connectionId })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (alertBox) {
-          alertBox.textContent = data.error || "Disconnect failed.";
-          alertBox.className = "alert alert-danger";
-        }
-        return;
-      }
-      if (alertBox) {
-        alertBox.textContent = data.message;
-        alertBox.className = "alert alert-success";
-      }
-      setTimeout(() => location.reload(), 1000);
-    } catch (err) {
-      if (alertBox) {
-        alertBox.textContent = "Network error.";
-        alertBox.className = "alert alert-danger";
-      }
-    }
-  }
-
-  async function respondConnection(connectionId, action) {
-    const alertBox = document.getElementById("doctorPatientsAlert");
-    alertBox.className = "alert d-none";
-    try {
-      const res = await fetch("/api/auth/doctor/respond-connection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connection_id: connectionId, action: action })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alertBox.textContent = data.error || "Response failed.";
-        alertBox.className = "alert alert-danger";
-        return;
-      }
-      alertBox.textContent = data.message;
-      alertBox.className = "alert alert-success";
-      setTimeout(() => location.reload(), 1000);
-    } catch (err) {
-      alertBox.textContent = "Network error.";
-      alertBox.className = "alert alert-danger";
-    }
-  }
-
-  async function sendChatMessageInline(id) {
-    const input = document.getElementById("aiChatInput");
-    const history = document.getElementById("aiChatHistory");
-    if (!input || !history || !input.value.trim()) return;
-
-    const query = input.value.trim();
-    input.value = "";
-
-    // Append user message
-    const userDiv = document.createElement("div");
-    userDiv.innerHTML = `<span style="color:var(--purple-neural);font-weight:600;">You:</span> ${query}`;
-    history.appendChild(userDiv);
-    history.scrollTop = history.scrollHeight;
-
-    // Append loading spinner
-    const loadingDiv = document.createElement("div");
-    loadingDiv.id = "aiChatLoading";
-    loadingDiv.innerHTML = `<span style="color:var(--cyan-primary);font-weight:600;">AI:</span> <i class="fa-solid fa-spinner fa-spin"></i> Analyzing context...`;
-    history.appendChild(loadingDiv);
-    history.scrollTop = history.scrollHeight;
-    try {
-      const res = await fetch(`/api/history/${id}/explain`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: query })
-      });
-      const data = await res.json();
-
-      const loader = document.getElementById("aiChatLoading");
-      if (loader) loader.remove();
-
-      const aiDiv = document.createElement("div");
-      aiDiv.innerHTML = `<span style="color:var(--cyan-primary);font-weight:600;">AI:</span> ${data.reply || "Unable to retrieve insights."}`;
-      history.appendChild(aiDiv);
-      history.scrollTop = history.scrollHeight;
-    } catch (err) {
-      const loader = document.getElementById("aiChatLoading");
-      if (loader) loader.remove();
-
-      const errorDiv = document.createElement("div");
-      errorDiv.innerHTML = `<span style="color:var(--red-critical);font-weight:600;">System:</span> Network error. Please try again.`;
-      history.appendChild(errorDiv);
-      history.scrollTop = history.scrollHeight;
-    }
-  }
-
-  async function approveRecordReportInline(id) {
-    const textarea = document.getElementById("modalDoctorRemarks");
-    const remarks = textarea ? textarea.value.trim() : "";
-    const selectModel = document.getElementById("modalSelectModel");
-    const model = selectModel ? selectModel.value : "random_forest";
 
     try {
       const res = await fetch(`/api/history/${id}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ remarks, model })
+        body: JSON.stringify({
+          final_diagnosis: finalDiagnosis,
+          observations: observations,
+          treatment_notes: treatmentNotes,
+          ai_explanation: aiExplanation,
+          doctor_signature: signature,
+          model: model,
+          report_sections: sections
+        })
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Failed to approve record.");
+        alert(data.error || "Failed to finalize diagnosis.");
         return;
       }
-      alert(data.message);
+      alert(data.message || "Diagnosis finalized successfully.");
       window.location.href = "/portal?section=history";
     } catch (err) {
-      alert("Network error approving record.");
+      alert("Network error finalizing diagnosis.");
     }
-  }
-
-  function printRecordReportInline(id) {
-    // Redirect to native printing utility
-    window.open(`/results?record_id=${id}`, "_blank");
   }
 </script>
 {% endblock %}
