@@ -42,6 +42,8 @@ const FEATURE_LABELS = {
     'Creatinine': 'Creatinine (mg/dL)',
     'Troponin': 'Troponin (ng/mL)',
     'C-reactive Protein': 'CRP (mg/L)',
+    'Widal O Titer': 'Widal O Titer',
+    'Widal H Titer': 'Widal H Titer',
 };
 
 const DISEASE_COLORS = {
@@ -79,7 +81,98 @@ document.addEventListener('DOMContentLoaded', () => {
     initPresets();
     initForm();
     initPatientLinking();
+    initCategorySelector();
 });
+
+// ── Category Selection Visibility Control ─────────────────────
+const CATEGORY_FIELDS = {
+    all: [
+        'Glucose', 'Cholesterol', 'Hemoglobin', 'Platelets', 'White Blood Cells', 'Red Blood Cells',
+        'Hematocrit', 'Mean Corpuscular Volume', 'Mean Corpuscular Hemoglobin',
+        'Mean Corpuscular Hemoglobin Concentration', 'Insulin', 'BMI', 'Systolic Blood Pressure',
+        'Diastolic Blood Pressure', 'Triglycerides', 'HbA1c', 'LDL Cholesterol', 'HDL Cholesterol',
+        'ALT', 'AST', 'Heart Rate', 'Creatinine', 'Troponin', 'C-reactive Protein'
+    ],
+    diabetes: ['Glucose', 'HbA1c', 'Cholesterol', 'BMI'],
+    cardiovascular: ['Cholesterol', 'Troponin', 'Systolic Blood Pressure', 'Diastolic Blood Pressure', 'Platelets'],
+    anemia: [
+        'Hemoglobin', 'Red Blood Cells', 'Hematocrit', 'Mean Corpuscular Volume',
+        'Mean Corpuscular Hemoglobin', 'Mean Corpuscular Hemoglobin Concentration'
+    ],
+    typhoid: ['Widal O Titer', 'Widal H Titer', 'White Blood Cells', 'AST', 'ALT']
+};
+
+function initCategorySelector() {
+    const selector = document.getElementById('diseaseCategorySelect');
+    if (!selector) return;
+    selector.addEventListener('change', () => {
+        updateFieldVisibility(selector.value);
+    });
+    // Set initial visibility
+    updateFieldVisibility(selector.value);
+}
+
+function updateFieldVisibility(category) {
+    const visibleFeatures = CATEGORY_FIELDS[category] || CATEGORY_FIELDS.all;
+    
+    // Toggle input field column wrappers
+    const inputs = document.querySelectorAll('.biomarker-input');
+    inputs.forEach(input => {
+        const featName = input.dataset.feature;
+        const col = input.closest('.col-12');
+        if (!col) return;
+        
+        if (visibleFeatures.includes(featName)) {
+            col.style.display = 'block';
+            col.classList.remove('d-none');
+        } else {
+            col.style.display = 'none';
+            col.classList.add('d-none');
+        }
+    });
+
+    // Toggle Typhoid only titles/wrappers
+    const typhoidGroups = document.querySelectorAll('.typhoid-only-group');
+    typhoidGroups.forEach(grp => {
+        if (category === 'typhoid') {
+            grp.style.display = 'block';
+            grp.classList.remove('d-none');
+        } else {
+            grp.style.display = 'none';
+            grp.classList.add('d-none');
+        }
+    });
+
+    // Toggle standard group headings if all their children are hidden
+    const groups = [
+        { title: 'Metabolic Indices', selector: '#f-Glucose, #f-Insulin, #f-BMI, #f-HbA1c' },
+        { title: 'Cardiovascular Metrics', selector: '#f-Cholesterol, #f-LDL, #f-HDL, #f-Triglycerides, #f-SBP, #f-DBP, #f-HR, #f-Troponin' },
+        { title: 'Hematology', selector: '#f-Hemoglobin, #f-Platelets, #f-WBC, #f-RBC, #f-Hematocrit, #f-MCV, #f-MCH, #f-MCHC' },
+        { title: 'Liver & Kidney Function', selector: '#f-ALT, #f-AST, #f-Creatinine, #f-CRP' }
+    ];
+
+    document.querySelectorAll('.biomarker-group-title').forEach(titleEl => {
+        const titleText = titleEl.textContent.trim();
+        const grp = groups.find(g => g.title === titleText);
+        if (grp) {
+            const elements = document.querySelectorAll(grp.selector);
+            let anyVisible = false;
+            elements.forEach(el => {
+                const col = el.closest('.col-12');
+                if (col && col.style.display !== 'none' && !col.classList.contains('d-none')) {
+                    anyVisible = true;
+                }
+            });
+            if (anyVisible) {
+                titleEl.style.display = 'block';
+                titleEl.classList.remove('d-none');
+            } else {
+                titleEl.style.display = 'none';
+                titleEl.classList.add('d-none');
+            }
+        }
+    });
+}
 
 // ── Model Selector ────────────────────────────────────────────
 function initModelSelector() {
@@ -128,9 +221,17 @@ function initForm() {
 
     // Live validation on blur
     document.querySelectorAll('.biomarker-input').forEach(input => {
-        input.addEventListener('blur', () => validateSingleField(input));
+        input.addEventListener('blur', () => {
+            const col = input.closest('.col-12');
+            const isHidden = col && (col.style.display === 'none' || col.classList.contains('d-none'));
+            if (!isHidden) validateSingleField(input);
+        });
         input.addEventListener('input', () => {
-            if (input.classList.contains('invalid')) validateSingleField(input);
+            if (input.classList.contains('invalid')) {
+                const col = input.closest('.col-12');
+                const isHidden = col && (col.style.display === 'none' || col.classList.contains('d-none'));
+                if (!isHidden) validateSingleField(input);
+            }
         });
     });
 }
@@ -139,6 +240,7 @@ async function runDiagnosis() {
     const features = collectFeatures();
     if (!features) return;
     const model = document.getElementById('selectedModel')?.value || 'random_forest';
+    const category = document.getElementById('diseaseCategorySelect')?.value || 'all';
 
     const patientSelect = document.getElementById('linkPatientSelect');
     const patientRefInput = document.getElementById('patientReferenceInput');
@@ -157,6 +259,7 @@ async function runDiagnosis() {
     try {
         const payload = {
             features,
+            category,
             model,
             patient_id,
             patient_reference,
@@ -222,6 +325,10 @@ function collectFeatures() {
     let   valid   = true;
 
     inputs.forEach((input) => {
+        const col = input.closest('.col-12');
+        const isHidden = col && (col.style.display === 'none' || col.classList.contains('d-none'));
+        if (isHidden) return;
+
         if (!validateSingleField(input)) valid = false;
         const name = input.dataset.feature;
         const val  = parseFloat(input.value);
@@ -514,6 +621,13 @@ function initPatientLinking() {
         }
     }
 
+    const submitBtn = document.getElementById("submitBtn");
+    function updateSubmitBtnState() {
+        if (submitBtn && patientSelect) {
+            submitBtn.disabled = (patientSelect.value === "");
+        }
+    }
+
     // Set initial reference
     if (patientRefInput) {
         patientRefInput.value = "SHS-GEN-" + generateRandomSuffix();
@@ -524,7 +638,9 @@ function initPatientLinking() {
     let patientDrafts = [];
 
     if (patientSelect && patientRefInput) {
+        updateSubmitBtnState();
         patientSelect.addEventListener('change', async () => {
+            updateSubmitBtnState();
             window.selectedDraftId = null;
             if (draftRecordSelect) {
                 draftRecordSelect.innerHTML = '<option value="">-- Enter biomarkers manually --</option>';
