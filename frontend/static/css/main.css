@@ -2304,6 +2304,8 @@ body.portal-page #cold-start-overlay {
     font-size: 0.8rem;
     color: var(--text-secondary);
     line-height: 1.4;
+    word-break: break-word;
+    white-space: normal;
 }
 
 .notif-time {
@@ -2311,6 +2313,14 @@ body.portal-page #cold-start-overlay {
     color: var(--text-muted);
     margin-top: 4px;
     text-align: right;
+}
+
+.btn-close-notif:hover {
+    color: var(--red-critical) !important;
+}
+
+body.no-scroll {
+    overflow: hidden !important;
 }
 
 @media (max-width: 768px) {
