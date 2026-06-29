@@ -49,9 +49,23 @@
 
           <!-- STEP 1 -->
           <div class="register-step-panel active" data-step="1">
-            <div class="auth-form-group">
-              <label for="fullName" class="auth-label">Full Name *</label>
-              <input type="text" id="fullName" name="full_name" class="auth-input" placeholder="Dr. Sophia Mensah" required>
+            <div style="display: flex; gap: 15px; width: 100%;">
+              <div class="auth-form-group" style="flex: 0 0 100px;">
+                <label for="title" class="auth-label">Title *</label>
+                <select id="title" name="title" class="auth-input" required style="appearance: auto; padding-right: 5px;">
+                  <option value="" disabled selected>Select</option>
+                  <option value="Dr.">Dr.</option>
+                  <option value="Mr.">Mr.</option>
+                  <option value="Mrs.">Mrs.</option>
+                  <option value="Miss">Miss</option>
+                  <option value="Prof.">Prof.</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="auth-form-group" style="flex: 1;">
+                <label for="fullName" class="auth-label">Full Name *</label>
+                <input type="text" id="fullName" name="full_name" class="auth-input" placeholder="John Doe" required>
+              </div>
             </div>
             <div class="auth-form-group">
               <label for="email" class="auth-label">Email Address *</label>
@@ -182,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function validateStep1() {
-        const fields = ["fullName", "email", "password", "confirmPassword"];
+        const fields = ["title", "fullName", "email", "password", "confirmPassword"];
         for (const id of fields) {
             const el = document.getElementById(id);
             if (!el.value.trim() || !el.checkValidity()) {
