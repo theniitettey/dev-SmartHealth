@@ -127,7 +127,7 @@ def predict():
                     "status": "failed"
                 }), 400
 
-        model_key = str(data.get("model", "random_forest"))
+        model_key = "random_forest"
         patient_ref = str(data.get("patient_reference", "")).strip() or None
         linked_patient_id = data.get("patient_id")
 
@@ -546,7 +546,7 @@ def approve_diagnosis(record_id):
         
     data = request.get_json(force=True, silent=True) or {}
     remarks = data.get("remarks", "").strip()
-    model_key = data.get("model", "random_forest")
+    model_key = "random_forest"
     
     # Extract review details
     final_diag = data.get("final_diagnosis", "").strip()
