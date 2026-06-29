@@ -30,7 +30,12 @@
         <i class="fa-solid fa-user-doctor"></i>
       </div>
       <div class="sidebar-user-info">
-        <div class="sidebar-user-name">{{ session.get('full_name', 'User') }}</div>
+        <div class="sidebar-user-name">
+          {{ session.get('full_name', 'User') }}
+          {% if session.get('role') == 'doctor' and session.get('status') == 'approved' %}
+            <i class="fa-solid fa-circle-check text-success" title="Verified Physician" style="color: var(--cyan-primary) !important; margin-left: 5px;"></i>
+          {% endif %}
+        </div>
         <div class="sidebar-user-role">
           {% if session.get('role') == 'admin' %}
             Super Admin
@@ -46,13 +51,13 @@
     </div>
 
     <nav class="sidebar-nav">
-      <!-- Shared Alert/Notification item -->
-      <a href="#" class="sidebar-link" id="notifSidebarLink" onclick="toggleNotificationsPanel(event)">
-        <i class="fa-solid fa-bell"></i><span>Notifications</span>
-        <span class="sidebar-badge" id="notifBadge" style="display:none;background:var(--red-critical);">0</span>
-      </a>
-
       {% if session.get('role') == 'admin' %}
+        <!-- Shared Alert/Notification item for admin -->
+        <a href="#" class="sidebar-link" id="notifSidebarLink" onclick="toggleNotificationsPanel(event)">
+          <i class="fa-solid fa-bell"></i><span>Notifications</span>
+          <span class="sidebar-badge" id="notifBadge" style="display:none;background:var(--red-critical);">0</span>
+        </a>
+
         <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
           <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
         </a>
@@ -71,16 +76,20 @@
         <a href="/portal?section=monitoring" class="sidebar-link {% if section == 'monitoring' %}active{% endif %}">
           <i class="fa-solid fa-server"></i><span>System Monitoring</span>
         </a>
+        <!-- Requirement 14: Rename Navigation Item from 'Patient Diagnosis' to 'Diagnosis History' for Super Admin -->
         <a href="/predict" class="sidebar-link {% if section == 'diagnosis' %}active{% endif %}">
-          <i class="fa-solid fa-notes-medical"></i><span>Patient Diagnosis</span>
+          <i class="fa-solid fa-notes-medical"></i><span>Diagnosis History</span>
         </a>
       {% else %}
+        <!-- 1. Dashboard -->
         <a href="/portal?section=dashboard" class="sidebar-link {% if section == 'dashboard' %}active{% endif %}">
           <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
         </a>
-        <a href="/portal?section=profile" class="sidebar-link {% if section == 'profile' %}active{% endif %}">
-          <i class="fa-solid fa-id-card"></i><span>Profile</span>
+        <!-- 2. Patient Cases -->
+        <a href="/portal?section=patients" class="sidebar-link {% if section == 'patients' %}active{% endif %}">
+          <i class="fa-solid fa-users"></i><span>Patient Cases</span>
         </a>
+        <!-- 3. Patient Diagnosis -->
         {% if doctor and doctor.status == 'approved' %}
         <a href="/predict" class="sidebar-link {% if section == 'diagnosis' %}active{% endif %}">
           <i class="fa-solid fa-notes-medical"></i><span>Patient Diagnosis</span>
@@ -90,11 +99,18 @@
           <i class="fa-solid fa-lock"></i><span>Patient Diagnosis</span>
         </span>
         {% endif %}
+        <!-- 4. Diagnosis History -->
         <a href="/portal?section=history" class="sidebar-link {% if section == 'history' %}active{% endif %}">
           <i class="fa-solid fa-clock-rotate-left"></i><span>Diagnosis History</span>
         </a>
-        <a href="/portal?section=patients" class="sidebar-link {% if section == 'patients' %}active{% endif %}">
-          <i class="fa-solid fa-users"></i><span>Patient Cases</span>
+        <!-- 5. Notifications -->
+        <a href="#" class="sidebar-link" id="notifSidebarLink" onclick="toggleNotificationsPanel(event)">
+          <i class="fa-solid fa-bell"></i><span>Notifications</span>
+          <span class="sidebar-badge" id="notifBadge" style="display:none;background:var(--red-critical);">0</span>
+        </a>
+        <!-- 6. Profile Settings -->
+        <a href="/portal?section=profile" class="sidebar-link {% if section == 'profile' %}active{% endif %}">
+          <i class="fa-solid fa-id-card"></i><span>Profile Settings</span>
         </a>
       {% endif %}
     </nav>
@@ -108,8 +124,13 @@
   <!-- Notifications Panel Dropdown -->
   <div id="notificationsPanel" class="notifications-panel-popover" style="display:none;">
     <div class="notif-panel-header">
-      <span>Notifications</span>
-      <button onclick="readAllNotifications(event)" class="btn-clear-notif">Mark all read</button>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span>Notifications</span>
+        <button onclick="readAllNotifications(event)" class="btn-clear-notif">Mark all read</button>
+      </div>
+      <button onclick="closeNotificationsPanel(event)" class="btn-close-notif" aria-label="Close panel" style="background:transparent; border:none; color:var(--text-secondary); font-size:1.1rem; cursor:pointer; display:flex; align-items:center; padding:0 4px;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
     <div id="notifListContainer" class="notif-list-container">
       <p class="text-muted p-3 text-center">No notifications</p>
@@ -129,6 +150,7 @@
 
 <script>
   window.USER_ROLE = "{{ session.get('role') }}";
+  window.USER_ID = "{{ session.get('user_id') }}";
 </script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="{{ url_for('static', filename='js/portal.js') }}"></script>
