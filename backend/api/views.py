@@ -8,7 +8,7 @@ from backend.database.models import User, Patient, DiagnosticRecord, DoctorPatie
 from backend.ml.model_manager import model_manager
 
 views_bp = Blueprint("views", __name__)
-ADMIN_SECTIONS = ("dashboard", "verification", "users", "datasets", "monitoring", "view_record")
+ADMIN_SECTIONS = ("dashboard", "verification", "users", "datasets", "monitoring", "view_record", "history")
 DOCTOR_SECTIONS = ("dashboard", "profile", "history", "reports", "patients", "view_record")
 
 SECTION_TITLES = {
@@ -123,9 +123,15 @@ def _build_portal_context(user_id, role, section):
         record = DiagnosticRecord.query.get(record_id)
 
     if role == "admin":
+        doctor = User.query.get(user_id)
         doctors = User.query.filter_by(role="doctor").order_by(User.created_at.desc()).all()
         all_users = User.query.order_by(User.created_at.desc()).all()
         records = DiagnosticRecord.query.order_by(DiagnosticRecord.created_at.desc()).limit(50).all()
+        
+        patients = Patient.query.order_by(Patient.created_at.desc()).all()
+        active_patients = [p for p in patients if not p.is_archived]
+        archived_patients = [p for p in patients if p.is_archived]
+        
         return {
             "section": section,
             "doctors": doctors,
@@ -133,7 +139,10 @@ def _build_portal_context(user_id, role, section):
             "records": records,
             "stats": _portal_stats(doctors, all_users, records),
             "health": model_manager.health_report(),
-            "doctor": None,
+            "doctor": doctor,
+            "patients": patients,
+            "active_patients": active_patients,
+            "archived_patients": archived_patients,
             "patient_user": None,
             "patient_profile": None,
             "page_title": page_title,
