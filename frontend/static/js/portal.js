@@ -61,11 +61,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ── Notification Utilities ── */
 
-async function fetchNotifications() {
+let notifCurrentPage = 1;
+const SHOWN_NOTIF_KEY = "shs_shown_notifications";
+
+function getShownNotifIds() {
     try {
-        const res = await fetch("/api/notifications");
+        const raw = localStorage.getItem(SHOWN_NOTIF_KEY);
+        return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+        return new Set();
+    }
+}
+
+function saveShownNotifIds(set) {
+    try {
+        localStorage.setItem(SHOWN_NOTIF_KEY, JSON.stringify(Array.from(set)));
+    } catch (err) {}
+}
+
+async function fetchNotifications(page = notifCurrentPage) {
+    try {
+        const res = await fetch(`/api/notifications?page=${page}&per_page=5`);
         const data = await res.json();
         if (!res.ok) return;
+
+        notifCurrentPage = data.page || 1;
 
         const badge = document.getElementById("notifBadge");
         if (badge) {
@@ -82,11 +102,13 @@ async function fetchNotifications() {
             if (data.notifications && data.notifications.length > 0) {
                 let html = "";
                 data.notifications.forEach(n => {
-                    const timeStr = new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const dateObj = new Date(n.created_at);
+                    const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
                     html += `
                         <div class="notif-item ${n.is_read ? 'read' : 'unread'}" onclick="markNotificationRead(${n.id})">
                             <div class="notif-msg">${n.message}</div>
-                            <div class="notif-time">${timeStr}</div>
+                            <div class="notif-time">${dateStr} · ${timeStr}</div>
                         </div>
                     `;
                 });
@@ -95,9 +117,93 @@ async function fetchNotifications() {
                 container.innerHTML = `<p class="text-muted p-3 text-center">No notifications</p>`;
             }
         }
+
+        // Update pagination controls
+        const prevBtn = document.getElementById("btnNotifPrev");
+        const nextBtn = document.getElementById("btnNotifNext");
+        const pageInfo = document.getElementById("notifPageInfo");
+        
+        if (pageInfo) {
+            pageInfo.textContent = `Page ${data.page} of ${data.total_pages || 1}`;
+        }
+        if (prevBtn) {
+            prevBtn.disabled = !data.has_prev;
+            prevBtn.style.opacity = data.has_prev ? "1" : "0.5";
+            prevBtn.style.cursor = data.has_prev ? "pointer" : "not-allowed";
+        }
+        if (nextBtn) {
+            nextBtn.disabled = !data.has_next;
+            nextBtn.style.opacity = data.has_next ? "1" : "0.5";
+            nextBtn.style.cursor = data.has_next ? "pointer" : "not-allowed";
+        }
+
+        // Stacked Toast alerts (Component 3)
+        showStackedToasts(data.notifications);
+
     } catch (err) {
         console.error("Error fetching notifications:", err);
     }
+}
+
+function changeNotifPage(direction) {
+    fetchNotifications(notifCurrentPage + direction);
+}
+
+function showStackedToasts(notifications) {
+    if (!notifications) return;
+    
+    let container = document.getElementById("toastNotificationsContainer");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toastNotificationsContainer";
+        document.body.appendChild(container);
+    }
+    
+    const shownIds = getShownNotifIds();
+    let updated = false;
+    
+    notifications.forEach(n => {
+        if (!n.is_read && !shownIds.has(n.id)) {
+            shownIds.add(n.id);
+            updated = true;
+            
+            const toast = document.createElement("div");
+            toast.className = "floating-toast";
+            toast.id = `toast-notif-${n.id}`;
+            
+            const timeStr = new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            toast.innerHTML = `
+                <div class="floating-toast-header">
+                    <span><i class="fa-solid fa-circle-info"></i> New Notification</span>
+                    <button class="floating-toast-close" onclick="dismissToastNotification(${n.id}, event)"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="floating-toast-body" onclick="clickToastNotification(${n.id})">${n.message}</div>
+                <div style="font-size:0.65rem; color:var(--text-muted); text-align:right;">${timeStr}</div>
+            `;
+            
+            container.appendChild(toast);
+        }
+    });
+    
+    if (updated) {
+        saveShownNotifIds(shownIds);
+    }
+}
+
+async function clickToastNotification(id) {
+    await markNotificationRead(id);
+    const toast = document.getElementById(`toast-notif-${id}`);
+    if (toast) toast.remove();
+}
+
+async function dismissToastNotification(id, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    const toast = document.getElementById(`toast-notif-${id}`);
+    if (toast) toast.remove();
+    await markNotificationRead(id);
 }
 
 async function markNotificationRead(id) {
