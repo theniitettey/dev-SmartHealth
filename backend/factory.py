@@ -63,6 +63,9 @@ def _rebuild_diagnostic_records_table(col_info):
 
 def _ensure_diagnostic_schema():
     """Migrate diagnostic_records schema on existing SQLite databases."""
+    if db.engine.name != 'sqlite':
+        return
+
     from sqlalchemy import inspect, text
 
     log = logging.getLogger("smarthealth.factory")
@@ -100,11 +103,14 @@ def _ensure_diagnostic_schema():
             _rebuild_diagnostic_records_table(col_info)
     except Exception as exc:
         db.session.rollback()
-        log.warning(f"Schema migration skipped: {exc}")
+        log.error(f"[SmartHealth] Schema migration error: {exc}")
 
 
 def _ensure_patient_schema():
     """Add new columns to patients and users tables if missing."""
+    if db.engine.name != 'sqlite':
+        return
+
     from sqlalchemy import inspect, text
 
     log = logging.getLogger("smarthealth.factory")
@@ -195,25 +201,35 @@ def create_app() -> Flask:
 
     # Ensure DB tables exist and seed default admin user
     with app.app_context():
-        db.create_all()
-        _ensure_diagnostic_schema()
-        _ensure_patient_schema()
-        log.info("[SmartHealth] Database tables synchronised.")
-        
-        from backend.database.models import User
-        admin = User.query.filter_by(role='admin').first()
-        if not admin:
-            admin = User(
-                username='admin@smarthealth.com',
-                email='admin@smarthealth.com',
-                full_name='Super Admin',
-                role='admin',
-                status='approved'
-            )
-            admin.set_password('AdminPassword2026')
-            db.session.add(admin)
-            db.session.commit()
-            log.info("[SmartHealth] Seeded default Super Admin: admin@smarthealth.com")
+        try:
+            db.create_all()
+            _ensure_diagnostic_schema()
+            _ensure_patient_schema()
+            log.info("[SmartHealth] Database tables synchronised.")
+
+            from backend.database.models import User
+            admin = User.query.filter_by(role='admin').first()
+            if not admin:
+                admin_email = app.config.get("ADMIN_EMAIL") or "admin@smarthealth.com"
+                admin_username = app.config.get("ADMIN_USERNAME") or "admin@smarthealth.com"
+                admin_password = app.config.get("ADMIN_PASSWORD") or "AdminPassword2026"
+                admin = User(
+                    username=admin_username,
+                    email=admin_email,
+                    full_name='Super Admin',
+                    role='admin',
+                    status='approved'
+                )
+                admin.set_password(admin_password)
+                db.session.add(admin)
+                db.session.commit()
+                log.info(f"[SmartHealth] Seeded default Super Admin: {admin_email}")
+            else:
+                log.info(f"[SmartHealth] Super Admin already exists: {admin.email}")
+        except Exception as db_exc:
+            db.session.rollback()
+            log.critical(f"[SmartHealth] Database initialisation failed — cannot start: {db_exc}")
+            raise
 
     # ── Error Handlers ────────────────────────────────────────
     @app.errorhandler(429)
