@@ -5,6 +5,7 @@ Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana
 
 import json
 import logging
+import os
 from flask import Blueprint, request, jsonify, session, current_app
 
 from backend.database.models import db, DiagnosticRecord, User, Patient, DoctorPatientConnection, DoctorTechnicianConnection
@@ -1168,14 +1169,25 @@ def get_notifications():
     if not user_id:
         return jsonify({"error": "Unauthorized."}), 401
     
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 5, type=int)
+    
     from backend.database.models import Notification
-    notifications = Notification.query.filter_by(user_id=user_id).order_by(Notification.created_at.desc()).limit(20).all()
+    query = Notification.query.filter_by(user_id=user_id).order_by(Notification.created_at.desc())
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    
     unread_count = Notification.query.filter_by(user_id=user_id, is_read=False).count()
     
     return jsonify({
         "status": "success",
-        "notifications": [n.to_dict() for n in notifications],
-        "unread_count": unread_count
+        "notifications": [n.to_dict() for n in pagination.items],
+        "unread_count": unread_count,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": pagination.pages,
+        "total_count": pagination.total,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev
     }), 200
 
 

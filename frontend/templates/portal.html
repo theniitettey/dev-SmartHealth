@@ -58,7 +58,7 @@
     </div>
   </div>
 </div>
-{% elif session.get('role') == 'doctor' and record.status == 'draft' %}
+{% elif session.get('role') in ('doctor', 'admin') and record.status == 'draft' %}
 <div class="portal-card">
   <div class="portal-section-title"><i class="fa-solid fa-file-medical"></i> Review Diagnosis Draft</div>
   <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:15px;">
@@ -266,7 +266,6 @@
       <div class="row g-2 text-start" style="font-size:0.88rem; margin-bottom:15px;">
         <div class="col-6"><strong>ML Prediction:</strong> {{ record.prediction_label }}</div>
         <div class="col-6"><strong>Confidence Score:</strong> {{ '%.1f' | format(record.confidence_score or 0) }}%</div>
-        <div class="col-6"><strong>Model Version:</strong> {{ (record.model_version or '—') | replace('_', ' ') | upper }}</div>
       </div>
       
       <!-- Probability Bars -->
@@ -885,7 +884,7 @@
 {% elif section == 'history' %}
 <div class="portal-card">
   <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Diagnosis History</div>
-  {% if doctor.status != 'approved' %}
+  {% if session.get('role') != 'admin' and doctor.status != 'approved' %}
   <p class="dash-empty"><i class="fa-solid fa-lock"></i> Diagnosis history is available after verification is approved.
   </p>
   {% elif records %}
@@ -1599,7 +1598,6 @@
                 <h5 style="color:#8E9630; font-size:0.95rem; margin-bottom:10px; font-weight: bold;">Machine Learning Inference</h5>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size:0.88rem;">
                   <div><strong>Prediction Confidence:</strong> ${record.confidence.toFixed(1)}%</div>
-                  <div><strong>Classifier Model:</strong> ${record.model_used ? record.model_used.replace(/_/g, ' ').toUpperCase() : '—'}</div>
                 </div>
               </div>
           `;

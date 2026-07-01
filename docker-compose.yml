@@ -2,22 +2,23 @@
 # Smart Health Sync — Multi-service Docker setup
 # Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana 2026
 
-version: "3.9"
-
 services:
   backend:
     build:
       context: .
       dockerfile: docker/Dockerfile
     container_name: smarthealth-backend
-    ports:
-      - "5000:5000"
+    env_file:
+      - path: .env
+        required: false        # app has built-in fallbacks; .env is optional
     environment:
       - FLASK_ENV=production
       - PORT=5000
       - SECRET_KEY=${SECRET_KEY:-smarthealthsync-docker-secret}
       - LOG_LEVEL=INFO
-      - GROQ_API_KEY=${GROQ_API_KEY}
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL must be set (e.g. postgresql://user:pass@host:5432/db)}
+    ports:
+      - "5000:5000"
     volumes:
       - ./backend:/app/backend
       - ./frontend:/app/frontend

@@ -7,21 +7,21 @@ import os
 from pathlib import Path
 
 # Load .env file manually if it exists to avoid python-dotenv dependency
-# def load_env_file():
-#     base_dir = Path(__file__).resolve().parent.parent
-#     env_path = base_dir / ".env"
-#     if env_path.exists():
-#         with open(env_path, "r", encoding="utf-8") as f:
-#             for line in f:
-#                 line = line.strip()
-#                 if line and not line.startswith("#") and "=" in line:
-#                     k, v = line.split("=", 1)
-#                     val = v.strip()
-#                     if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
-#                         val = val[1:-1]
-#                     os.environ.setdefault(k.strip(), val)
+def load_env_file():
+    base_dir = Path(__file__).resolve().parent.parent
+    env_path = base_dir / ".env"
+    if env_path.exists():
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    val = v.strip()
+                    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                        val = val[1:-1]
+                    os.environ.setdefault(k.strip(), val)
 
-# load_env_file()
+load_env_file()
 
 # ─── Base Paths ───────────────────────────────────────────────
 BASE_DIR    = Path(__file__).resolve().parent.parent
@@ -56,10 +56,16 @@ class Config:
     # CORS
     CORS_ORIGINS     = os.environ.get("CORS_ORIGINS", "*")
 
-    # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///" + str(BASE_DIR / "smarthealth.db"))
-    if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
-        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
+    # Database — DATABASE_URL is required; no SQLite fallback to prevent silent data loss
+    _db_url = os.environ.get("DATABASE_URL")
+    if not _db_url:
+        raise RuntimeError(
+            "DATABASE_URL is not set. "
+            "Provide a valid PostgreSQL connection string in your environment or .env file."
+        )
+    if _db_url.startswith("postgres://"):
+        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Rate limiting
@@ -71,6 +77,11 @@ class Config:
 
     # Groq API
     GROQ_API_KEY     = os.environ.get("GROQ_API_KEY", "")
+
+    # Admin seed credentials
+    ADMIN_EMAIL      = os.environ.get("ADMIN_EMAIL", "admin@smarthealth.com")
+    ADMIN_USERNAME   = os.environ.get("ADMIN_USERNAME", "admin@smarthealth.com")
+    ADMIN_PASSWORD   = os.environ.get("ADMIN_PASSWORD", "AdminPassword2026")
 
 
 class DevelopmentConfig(Config):
