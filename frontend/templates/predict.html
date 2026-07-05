@@ -14,18 +14,18 @@
         <div class="col-12 col-md-6">
           <div class="reveal">
             <label class="auth-label">Patient Name</label>
-            <select id="linkPatientSelect" class="auth-input">
+            <select id="linkPatientSelect" class="auth-input" {% if selected_patient_id %}disabled{% endif %}>
               <option value="">-- Select a patient to enable diagnosis --</option>
               {% if active_patients %}
                 {% for p in active_patients %}
-                  <option value="{{ p.id }}" data-name="{{ p.full_name }}" data-uuid="{{ p.patient_uuid }}">
+                  <option value="{{ p.id }}" data-name="{{ p.full_name }}" data-uuid="{{ p.patient_uuid }}" {% if selected_patient_id|string == p.id|string %}selected{% endif %}>
                     {{ p.full_name }} (ID: {{ p.patient_uuid }})
                   </option>
                 {% endfor %}
               {% endif %}
             </select>
             <div class="auth-field-hint mt-2">
-              Select a patient case to link this diagnosis session to their history.
+              Select a patient case to link this diagnosis session to their history. {% if selected_patient_id %}(Locked to current context){% endif %}
             </div>
           </div>
         </div>
@@ -466,6 +466,24 @@
           </div>
         </div>
       </div>
+
+      <!-- 03 — Additional Biomarkers Search -->
+      <div class="additional-biomarkers-section mb-5 reveal" id="additionalBiomarkersSection" style="display:none;">
+        <div class="form-section-header">
+          <span class="form-section-number">03</span>
+          <h3 class="form-section-title">Add Additional Biomarkers</h3>
+        </div>
+        <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:15px;">
+          Search and add any remaining laboratory biomarkers from the panel that are not shown by default for the selected category.
+        </p>
+        <div class="auth-form-group position-relative" style="max-width:500px; margin:0 auto 20px auto;">
+          <label class="auth-label">Search Biomarkers</label>
+          <input type="text" id="biomarkerSearchInput" class="auth-input" placeholder="Type biomarker name (e.g. Insulin, Troponin)..." autocomplete="off">
+          <ul id="biomarkerSuggestionsList" class="dropdown-menu w-100" style="display:none; position:absolute; max-height:220px; overflow-y:auto; z-index:1050; background:var(--bg-surface, #1e1e1e); border:1px solid var(--bg-border, #333); color:var(--text-primary, #fff); list-style:none; padding:0; margin:4px 0 0 0; border-radius: var(--radius-sm);">
+          </ul>
+        </div>
+      </div>
+
 
       <div class="submit-btn-wrap d-flex gap-3 justify-content-center flex-wrap">
         <button type="submit" class="submit-btn" id="submitBtn" disabled style="flex: 1; max-width: 320px;">
