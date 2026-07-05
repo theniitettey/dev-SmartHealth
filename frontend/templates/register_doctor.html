@@ -70,6 +70,7 @@
             <div class="auth-form-group">
               <label for="email" class="auth-label">Email Address *</label>
               <input type="email" id="email" name="email" class="auth-input" placeholder="doctor@hospital.org" required>
+              <div class="field-error-msg" id="err-email" style="display:none; color: var(--red-critical, #ff4757); font-size: 0.82rem; margin-top: 5px;">Please enter a valid email address (e.g., doctor@hospital.org).</div>
             </div>
             <div class="auth-form-group">
               <label for="password" class="auth-label">Password *</label>
@@ -173,6 +174,19 @@ document.addEventListener("DOMContentLoaded", () => {
     let previewUrl = null;
     let currentStep = 1;
 
+    // Clear email validation error when typing a valid email
+    const emailField = document.getElementById("email");
+    const emailErrField = document.getElementById("err-email");
+    if (emailField) {
+        emailField.addEventListener("input", () => {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (emailRegex.test(emailField.value.trim())) {
+                if (emailErrField) emailErrField.style.display = "none";
+                emailField.classList.remove("invalid");
+            }
+        });
+    }
+
     function goToStep(step) {
         currentStep = step;
         stepPanels.forEach(p => p.classList.toggle("active", parseInt(p.dataset.step) === step));
@@ -204,6 +218,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 return false;
             }
         }
+        
+        // Regex email format validation
+        const emailInput = document.getElementById("email");
+        const emailErr = document.getElementById("err-email");
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(emailInput.value.trim())) {
+            if (emailErr) emailErr.style.display = "block";
+            emailInput.classList.add("invalid");
+            emailInput.focus();
+            return false;
+        } else {
+            if (emailErr) emailErr.style.display = "none";
+            emailInput.classList.remove("invalid");
+        }
+
         if (document.getElementById("password").value.length < 8) {
             alertBox.textContent = "Password must be at least 8 characters.";
             alertBox.classList.remove("d-none");

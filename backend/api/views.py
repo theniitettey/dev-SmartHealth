@@ -42,7 +42,9 @@ def predict_page():
         return redirect(url_for("views.portal_page"))
 
     ctx = _build_portal_context(user_id, role, "diagnosis")
+    ctx["selected_patient_id"] = request.args.get("patient_id")
     return render_template("predict.html", **ctx)
+
 
 
 @views_bp.route("/results")

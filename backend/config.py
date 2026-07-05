@@ -83,6 +83,16 @@ class Config:
     ADMIN_USERNAME   = os.environ.get("ADMIN_USERNAME", "admin@smarthealth.com")
     ADMIN_PASSWORD   = os.environ.get("ADMIN_PASSWORD", "AdminPassword2026")
 
+    # SMTP Mail configuration
+    MAIL_SERVER      = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT        = int(os.environ.get("MAIL_PORT", 587))
+    MAIL_USE_TLS     = os.environ.get("MAIL_USE_TLS", "True").lower() in ["true", "on", "1"]
+    MAIL_USE_SSL     = os.environ.get("MAIL_USE_SSL", "False").lower() in ["true", "on", "1"]
+    MAIL_USERNAME    = os.environ.get("MAIL_USERNAME", "")
+    MAIL_PASSWORD    = os.environ.get("MAIL_PASSWORD", "")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "noreply@smarthealth.com")
+
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

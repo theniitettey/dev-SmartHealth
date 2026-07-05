@@ -10,6 +10,8 @@ from flask import Blueprint, request, jsonify, session, current_app
 
 from backend.database.models import db, DiagnosticRecord, User, Patient, DoctorPatientConnection, DoctorTechnicianConnection
 from backend.ml.model_manager import model_manager
+from backend.ml.preprocessing.normalization import normalize_input
+
 
 logger  = logging.getLogger("smarthealth.api")
 api_bp  = Blueprint("api", __name__)
@@ -105,12 +107,28 @@ def predict():
             "Troponin": 0.05, "C-reactive Protein": 0.08,
         }
 
-        # Merge input features with healthy baseline
+        # Validate that raw entered values are numeric
+        for f_name, f_val in features_dict.items():
+            try:
+                float(f_val)
+            except (ValueError, TypeError):
+                return jsonify({
+                    "error": f"Biomarker '{f_name}' must be a numeric value.",
+                    "status": "failed"
+                }), 400
+
+        # Normalise raw inputs to 0-1 using approximated clinical reference ranges.
+        # These ranges are approximated from standard clinical references since the original
+        # training data's normalization parameters were not preserved, which is a documented
+        # limitation of the system.
+        normalized_inputs = normalize_input(features_dict)
+
+        # Merge normalised input features with healthy baseline (which is already normalised)
         full_features = HEALTHY_BASELINE.copy()
-        for k, v in features_dict.items():
+        for k, v in normalized_inputs.items():
             full_features[k] = v
 
-        # Validate biomarker ranges:
+        # Validate biomarker ranges (post-normalization check):
         for f_name, f_val in full_features.items():
             # If the user specifically entered Typhoid titers, skip 24-feature validation bound checks
             if f_name in ("Widal O Titer", "Widal H Titer") and category == "typhoid":
@@ -119,7 +137,7 @@ def predict():
                 val_f = float(f_val)
                 if val_f < 0.0 or val_f > 1.0:
                     return jsonify({
-                        "error": f"Biomarker '{f_name}' value {f_val} is out of bounds (must be between 0.0 and 1.0).",
+                        "error": f"Normalised biomarker '{f_name}' value {f_val} is out of bounds (must be between 0.0 and 1.0).",
                         "status": "failed"
                     }), 400
             except (ValueError, TypeError):
@@ -602,8 +620,13 @@ def approve_diagnosis(record_id):
         message=f"Report successfully generated for patient case {p_name}."
     )
     db.session.add(notif)
-    
     db.session.commit()
+    
+    # Force refresh the record and ensure relationships are loaded to prevent empty JSON/PDF data
+    db.session.refresh(record)
+    if record.patient_id and not record.patient:
+        from backend.database.models import Patient
+        record.patient = Patient.query.get(record.patient_id)
     
     logger.info(f"[API] Doctor {user_id} approved record {record_id} as finalized.")
     return jsonify({
@@ -858,6 +881,9 @@ def create_patient():
         return jsonify({"error": "Invalid date format for Date of Birth. Use YYYY-MM-DD."}), 400
 
     today = datetime.date.today()
+    if date_of_birth > today:
+        return jsonify({"error": "Date of Birth cannot be in the future."}), 400
+
     age_val = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
 
     patient_uuid = data.get("patient_uuid", "").strip()
@@ -968,9 +994,12 @@ def edit_patient(patient_id):
         try:
             import datetime
             date_of_birth = datetime.datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
-            patient.date_of_birth = date_of_birth
             
             today = datetime.date.today()
+            if date_of_birth > today:
+                return jsonify({"error": "Date of Birth cannot be in the future."}), 400
+                
+            patient.date_of_birth = date_of_birth
             patient.age = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
         except ValueError:
             return jsonify({"error": "Invalid date format for Date of Birth. Use YYYY-MM-DD."}), 400
@@ -1284,6 +1313,13 @@ def admin_verify_doctor(doctor_id):
     db.session.add(notif)
     db.session.commit()
     
+    # Send email notification after commit
+    try:
+        from backend.api.mail_utils import send_status_email
+        send_status_email(doctor.email, doctor.full_name, action)
+    except Exception as mail_exc:
+        logger.warning(f"[API] Could not send account status email to {doctor.email}: {mail_exc}")
+        
     return jsonify({
         "status": "success",
         "message": f"Doctor status updated to {doctor.status}.",

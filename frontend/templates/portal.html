@@ -1526,6 +1526,10 @@
       }
       
       const record = data.record;
+      if (!record || !record.id || !record.prediction || !record.biomarkers || Object.keys(record.biomarkers).length === 0) {
+          alert("Error: Diagnosis report data is missing or incomplete. Unable to generate PDF. Please refresh the page and try again.");
+          return;
+      }
       downloadFinalizedPDF(record, sections);
       
     } catch (err) {

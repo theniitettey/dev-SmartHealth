@@ -241,6 +241,13 @@ def verify_doctor():
         doctor.status = "approved" if action == "approve" else "rejected"
         db.session.commit()
 
+        # Send email notification after commit
+        try:
+            from backend.api.mail_utils import send_status_email
+            send_status_email(doctor.email, doctor.full_name, action)
+        except Exception as mail_exc:
+            logger.warning(f"[Auth] Could not send account status email to {doctor.email}: {mail_exc}")
+
         logger.info(f"[Auth] Admin {session.get('user_id')} updated Doctor {doctor.email} status to: {doctor.status}")
         return jsonify({
             "status": "success",

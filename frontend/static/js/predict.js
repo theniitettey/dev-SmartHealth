@@ -174,6 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Initialize additional biomarkers search (Task 5)
+    initAdditionalBiomarkersSearch();
+
     // Load saved form state
     loadFormState();
 });
@@ -207,6 +210,7 @@ function initCategorySelector() {
 }
 
 function updateFieldVisibility(category) {
+    manuallyAddedFeatures.clear();
     const visibleFeatures = CATEGORY_FIELDS[category] || CATEGORY_FIELDS.all;
     
     // Toggle input field column wrappers
@@ -237,7 +241,127 @@ function updateFieldVisibility(category) {
         }
     });
 
-    // Toggle standard group headings if all their children are hidden
+    updateGroupHeaders();
+    updateSearchableBiomarkers();
+}
+
+// ── Searchable Additional Biomarkers Dropdown Logic ──
+const manuallyAddedFeatures = new Set();
+
+function initAdditionalBiomarkersSearch() {
+    const searchInput = document.getElementById("biomarkerSearchInput");
+    const suggestionsList = document.getElementById("biomarkerSuggestionsList");
+    if (!searchInput || !suggestionsList) return;
+
+    searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase().trim();
+        const items = suggestionsList.querySelectorAll("li");
+        let visibleCount = 0;
+        
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (text.includes(query)) {
+                item.style.display = "block";
+                visibleCount++;
+            } else {
+                item.style.display = "none";
+            }
+        });
+
+        suggestionsList.style.display = (query.length > 0 && visibleCount > 0) ? "block" : "none";
+    });
+
+    searchInput.addEventListener("focus", () => {
+        updateSearchableBiomarkers();
+        const query = searchInput.value.toLowerCase().trim();
+        const items = suggestionsList.querySelectorAll("li");
+        if (items.length > 0) {
+            suggestionsList.style.display = "block";
+        }
+    });
+
+    // Close suggestions when clicking outside
+    document.addEventListener("click", (e) => {
+        if (!searchInput.contains(e.target) && !suggestionsList.contains(e.target)) {
+            suggestionsList.style.display = "none";
+        }
+    });
+}
+
+function updateSearchableBiomarkers() {
+    const categorySelect = document.getElementById('diseaseCategorySelect');
+    const category = categorySelect ? categorySelect.value : 'all';
+    
+    const additionalSection = document.getElementById('additionalBiomarkersSection');
+    const suggestionsList = document.getElementById("biomarkerSuggestionsList");
+    if (!suggestionsList) return;
+
+    // Searchable dropdown is only needed if a specific category is selected (not "all" or "typhoid")
+    if (category === 'all' || category === 'typhoid') {
+        if (additionalSection) additionalSection.style.display = 'none';
+        return;
+    } else {
+        if (additionalSection) additionalSection.style.display = 'block';
+    }
+
+    const visibleFeatures = CATEGORY_FIELDS[category] || CATEGORY_FIELDS.all;
+    
+    // Find all biomarkers from the 24 panel that are not visible and not manually added
+    const remainingFeatures = FEATURES.filter(f => !visibleFeatures.includes(f) && !manuallyAddedFeatures.has(f));
+
+    suggestionsList.innerHTML = "";
+    remainingFeatures.forEach(f => {
+        const li = document.createElement("li");
+        li.textContent = f;
+        li.style.padding = "8px 12px";
+        li.style.cursor = "pointer";
+        li.style.borderBottom = "1px solid var(--bg-border, #333)";
+        
+        li.addEventListener("mouseover", () => {
+            li.style.background = "rgba(197, 231, 16, 0.08)";
+            li.style.color = "var(--cyan-primary)";
+        });
+        li.addEventListener("mouseout", () => {
+            li.style.background = "";
+            li.style.color = "";
+        });
+
+        li.addEventListener("click", () => {
+            manuallyAddedFeatures.add(f);
+            
+            // Unhide input field
+            const inputs = document.querySelectorAll('.biomarker-input');
+            inputs.forEach(input => {
+                if (input.dataset.feature === f) {
+                    const col = input.closest('.col-12');
+                    if (col) {
+                        col.style.display = 'block';
+                        col.classList.remove('d-none');
+                        // Highlight animation border
+                        input.style.borderColor = 'var(--cyan-primary)';
+                        setTimeout(() => (input.style.borderColor = ''), 1000);
+                        input.focus();
+                    }
+                }
+            });
+
+            // Re-run group title check and suggestion lists
+            updateGroupHeaders();
+            updateSearchableBiomarkers();
+            
+            // Clear input
+            const searchInput = document.getElementById("biomarkerSearchInput");
+            if (searchInput) {
+                searchInput.value = "";
+            }
+            suggestionsList.style.display = "none";
+        });
+
+        suggestionsList.appendChild(li);
+    });
+}
+
+function updateGroupHeaders() {
     const groups = [
         { title: 'Metabolic Indices', selector: '#f-Glucose, #f-Insulin, #f-BMI, #f-HbA1c' },
         { title: 'Cardiovascular Metrics', selector: '#f-Cholesterol, #f-LDL, #f-HDL, #f-Triglycerides, #f-SBP, #f-DBP, #f-HR, #f-Troponin' },
@@ -396,8 +520,9 @@ function validateSingleField(input) {
         setFieldError(input, errEl, 'This field is required.');
         return false;
     }
-    if (val < 0 || val > 1) {
-        setFieldError(input, errEl, `Value must be between 0.0 and 1.0 (got ${val.toFixed(2)}).`);
+    // Relaxed validation to allow raw clinical values (non-negative numbers)
+    if (val < 0) {
+        setFieldError(input, errEl, `Value must be a positive number (got ${val.toFixed(2)}).`);
         return false;
     }
     clearFieldError(input, errEl);
@@ -722,5 +847,13 @@ function initPatientLinking() {
                 window.selectedDraftId = null;
             }
         });
+    }
+
+    // Auto-trigger if patient select is pre-populated
+    if (patientSelect && patientSelect.value) {
+        setTimeout(() => {
+            const event = new Event('change');
+            patientSelect.dispatchEvent(event);
+        }, 100);
     }
 }
