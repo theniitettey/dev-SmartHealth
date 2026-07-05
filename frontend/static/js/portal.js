@@ -57,6 +57,39 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 4000);
         }
     }
+
+    // Set dynamic max date to today for DOB inputs
+    const todayStr = new Date().toISOString().split('T')[0];
+    const newDobInput = document.getElementById("newPatientDOB");
+    if (newDobInput) newDobInput.setAttribute("max", todayStr);
+    const editDobInput = document.getElementById("editPatientDOB");
+    if (editDobInput) editDobInput.setAttribute("max", todayStr);
+
+    // Wire up notification pagination controls without inline onclick (Task 6)
+    const btnNotifPrev = document.getElementById("btnNotifPrev");
+    if (btnNotifPrev) {
+        btnNotifPrev.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            changeNotifPage(-1);
+        });
+    }
+    const btnNotifNext = document.getElementById("btnNotifNext");
+    if (btnNotifNext) {
+        btnNotifNext.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            changeNotifPage(1);
+        });
+    }
+
+    // Prevent clicks inside notifications panel from propagating or triggering page scroll
+    const notifPanel = document.getElementById("notificationsPanel");
+    if (notifPanel) {
+        notifPanel.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+    }
 });
 
 /* ── Notification Utilities ── */
@@ -396,7 +429,14 @@ function printCustomReport(id) {
 
 function downloadCustomReportPDF(id, patientRef) {
     const reportEl = document.getElementById("printableReportCard");
-    if (!reportEl) return;
+    if (!reportEl) {
+        alert("Error: Report data element was not found. Please refresh the page.");
+        return;
+    }
+    if (reportEl.innerText.trim().length < 50) {
+        alert("Error: Diagnosis report content is too short or empty. Unable to generate PDF. Please reload the page.");
+        return;
+    }
     
     const opt = {
         margin:       10,
@@ -971,10 +1011,21 @@ document.addEventListener("DOMContentLoaded", () => {
             const alertBox = document.getElementById("modalCreateAlert");
             const btn = document.getElementById("savePatientBtn");
             
+            const dobVal = document.getElementById("newPatientDOB").value;
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (dobVal && dobVal > todayStr) {
+                if (alertBox) {
+                    alertBox.textContent = "Date of Birth cannot be in the future.";
+                    alertBox.classList.remove("d-none");
+                }
+                if (btn) btn.disabled = false;
+                return;
+            }
+
             const payload = {
                 patient_uuid: document.getElementById("newPatientUUID").value,
                 full_name: document.getElementById("newPatientName").value.trim(),
-                date_of_birth: document.getElementById("newPatientDOB").value,
+                date_of_birth: dobVal,
                 gender: document.getElementById("newPatientGender").value,
                 clinical_notes: document.getElementById("newPatientNotes").value.trim()
             };
@@ -1021,9 +1072,20 @@ document.addEventListener("DOMContentLoaded", () => {
             const btn = document.getElementById("updatePatientBtn");
             const id = document.getElementById("editPatientId").value;
             
+            const dobVal = document.getElementById("editPatientDOB").value;
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (dobVal && dobVal > todayStr) {
+                if (alertBox) {
+                    alertBox.textContent = "Date of Birth cannot be in the future.";
+                    alertBox.classList.remove("d-none");
+                }
+                if (btn) btn.disabled = false;
+                return;
+            }
+
             const payload = {
                 full_name: document.getElementById("editPatientName").value.trim(),
-                date_of_birth: document.getElementById("editPatientDOB").value,
+                date_of_birth: dobVal,
                 gender: document.getElementById("editPatientGender").value,
                 clinical_notes: document.getElementById("editPatientNotes").value.trim()
             };
