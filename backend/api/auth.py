@@ -4,6 +4,7 @@ Authors: Enock Queenson Eduafo & Christabel Araba Edumadze | University of Ghana
 """
 
 import os
+import re
 import uuid
 import logging
 import time
@@ -18,6 +19,7 @@ logger = logging.getLogger("smarthealth.auth")
 auth_bp = Blueprint("auth", __name__)
 
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx'}
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 
 def allowed_file(filename):
@@ -56,6 +58,9 @@ def register():
 
         if not email or not full_name or not password:
             return jsonify({"error": "Email, Full Name, and Password are required."}), 400
+
+        if not EMAIL_REGEX.match(email):
+            return jsonify({"error": "Please enter a valid email address."}), 400
 
         if title and title != "Other":
             if not full_name.startswith(title):

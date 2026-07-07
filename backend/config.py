@@ -90,7 +90,7 @@ class Config:
     MAIL_USE_SSL     = os.environ.get("MAIL_USE_SSL", "False").lower() in ["true", "on", "1"]
     MAIL_USERNAME    = os.environ.get("MAIL_USERNAME", "")
     MAIL_PASSWORD    = os.environ.get("MAIL_PASSWORD", "")
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "noreply@smarthealth.com")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER") or MAIL_USERNAME
 
 
 
