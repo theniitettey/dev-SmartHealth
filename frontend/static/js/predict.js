@@ -471,6 +471,15 @@ async function runDiagnosis() {
         patient_reference = selectedOption.text.split(' (ID:')[0].trim();
     }
 
+    const symptoms = {};
+    if (category === 'typhoid') {
+        symptoms.fever = document.getElementById('symp-fever')?.checked || false;
+        symptoms.abdominal_pain = document.getElementById('symp-pain')?.checked || false;
+        symptoms.headache = document.getElementById('symp-headache')?.checked || false;
+        symptoms.diarrhea_constipation = document.getElementById('symp-diarrhea')?.checked || false;
+        symptoms.fatigue = document.getElementById('symp-fatigue')?.checked || false;
+    }
+
     const btn = document.getElementById('submitBtn');
     setLoading(btn, true);
 
@@ -481,7 +490,8 @@ async function runDiagnosis() {
             model,
             patient_id,
             patient_reference,
-            draft_id: window.selectedDraftId || null
+            draft_id: window.selectedDraftId || null,
+            symptoms
         };
         const res = await fetch('/api/predict', {
             method: 'POST',
