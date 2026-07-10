@@ -166,39 +166,127 @@ def predict():
 
         # Custom logic for Typhoid
         if category == "typhoid":
-            widal_o = float(features_dict.get("Widal O Titer", 0.5))
-            widal_h = float(features_dict.get("Widal H Titer", 0.5))
+            raw_widal_o = float(features_dict.get("Widal O Titer", 0.5))
+            raw_widal_h = float(features_dict.get("Widal H Titer", 0.5))
+
+            def normalize_widal(val):
+                if val > 1.0:
+                    if val >= 320: return 0.95
+                    elif val >= 160: return 0.85
+                    elif val >= 80: return 0.70
+                    elif val >= 40: return 0.40
+                    else: return 0.20
+                return val
+
+            widal_o = normalize_widal(raw_widal_o)
+            widal_h = normalize_widal(raw_widal_h)
             wbc = float(features_dict.get("White Blood Cells", 0.45))
             ast = float(features_dict.get("AST", 0.14))
             alt = float(features_dict.get("ALT", 0.15))
 
-            has_typhoid = widal_o > 0.55 or widal_h > 0.55
-            confidence = round(max(widal_o, widal_h) * 100, 2) if has_typhoid else round((1 - max(widal_o, widal_h)) * 100, 2)
-            if confidence > 99.0: confidence = 98.5
-            if confidence < 50.0: confidence = 55.0
+            symptoms = data.get("symptoms", {})
+            present_symptoms = [name for name, present in symptoms.items() if present]
+
+            symptom_labels = {
+                "fever": "Prolonged High Fever",
+                "abdominal_pain": "Abdominal Pain/Cramps",
+                "headache": "Severe Headache",
+                "diarrhea_constipation": "Diarrhea/Constipation",
+                "fatigue": "Severe Fatigue & Weakness"
+            }
+            symptom_strs = [symptom_labels[s] for s in present_symptoms if s in symptom_labels]
+
+            # Clinical criteria for Typhoid Fever
+            has_elevated_titers = widal_o > 0.55 or widal_h > 0.55
+            has_fever = symptoms.get("fever", False)
+            has_other_symptoms_count = sum([
+                symptoms.get("abdominal_pain", False),
+                symptoms.get("headache", False),
+                symptoms.get("diarrhea_constipation", False),
+                symptoms.get("fatigue", False)
+            ])
+
+            has_typhoid = has_elevated_titers and (has_fever or has_other_symptoms_count >= 2)
 
             if has_typhoid:
                 pred_label = "Typhoid Fever"
-                desc = "Elevated Widal titers (O and H) and clinical indications suggest active Typhoid Fever."
+                
+                # Dynamic confidence based on symptoms and titers
+                symptom_score = 0
+                if has_fever: symptom_score += 30
+                if symptoms.get("abdominal_pain"): symptom_score += 20
+                if symptoms.get("headache"): symptom_score += 15
+                if symptoms.get("diarrhea_constipation"): symptom_score += 15
+                if symptoms.get("fatigue"): symptom_score += 10
+
+                lab_score = 0
+                if widal_o > 0.55: lab_score += (widal_o - 0.55) / 0.45 * 40
+                if widal_h > 0.55: lab_score += (widal_h - 0.55) / 0.45 * 30
+                if wbc < 0.4 or wbc > 0.7: lab_score += 15
+                if ast > 0.5 or alt > 0.5: lab_score += 15
+
+                confidence = round(45.0 + (symptom_score + lab_score) * 0.45, 2)
+                confidence = min(95.0, max(55.0, confidence))
+
+                if symptom_strs:
+                    symptom_text = ", and ".join([", ".join(symptom_strs[:-1]), symptom_strs[-1]]) if len(symptom_strs) > 1 else symptom_strs[0]
+                    desc = f"Elevated Widal titers and clinical presentation of {symptom_text} strongly suggest active Typhoid Fever."
+                else:
+                    desc = "Elevated Widal test titers and clinical symptoms indicate active Typhoid Fever."
+
                 exps = []
-                if widal_o > 0.55:
-                    exps.append(f"Widal O Titer is elevated ({widal_o:.2f} score), showing active somatic antibody presence.")
-                if widal_h > 0.55:
-                    exps.append(f"Widal H Titer is elevated ({widal_h:.2f} score), showing flagellar antigen reaction.")
-                if wbc > 0.5:
-                    exps.append(f"White Blood Cell count ({wbc:.2f} score) indicates active immune system response.")
-                if not exps:
-                    exps.append("Elevated Widal test titers suggest active infection.")
+                if raw_widal_o > 1.0:
+                    exps.append(f"Widal O Titer is elevated at 1:{int(raw_widal_o)} dilution (somatically positive).")
+                else:
+                    exps.append(f"Widal O Titer normalized score is elevated ({widal_o:.2f}).")
+                if raw_widal_h > 1.0:
+                    exps.append(f"Widal H Titer is elevated at 1:{int(raw_widal_h)} dilution (flagellar positive).")
+                else:
+                    exps.append(f"Widal H Titer normalized score is elevated ({widal_h:.2f}).")
+                if wbc < 0.4:
+                    exps.append(f"White Blood Cell count is low-normal ({wbc:.2f} score), which is characteristic of Salmonella infection.")
+                elif wbc > 0.7:
+                    exps.append(f"White Blood Cell count is elevated ({wbc:.2f} score), indicating active system-wide inflammatory response.")
+                if ast > 0.5 or alt > 0.5:
+                    exps.append(f"Hepatic biomarkers AST ({ast:.2f}) / ALT ({alt:.2f}) indicate mild liver involvement or cell stress.")
+                if symptom_strs:
+                    exps.append(f"Patient presents with key clinical signs: {', '.join(symptom_strs)}.")
+                
                 recs = [
-                    "Consult physician for appropriate antibiotic therapy.",
-                    "Maintain strict water and food hygiene guidelines.",
-                    "Ensure adequate hydration and monitor body temperature."
+                    "Initiate clinical review for targeted antibiotic therapy (e.g. Ciprofloxacin or Ceftriaxone as per local protocols).",
+                    "Monitor core body temperature daily and maintain strict oral hydration.",
+                    "Practice strict hand hygiene and food/water safety guidelines to prevent transmission."
                 ]
             else:
                 pred_label = "Healthy"
-                desc = "Widal titers and liver biomarkers are within physiological baselines."
-                exps = ["Widal O and H titers do not indicate clinical significance for Salmonella infection."]
-                recs = ["Maintain regular sanitary and hygiene practices."]
+
+                # Dynamic confidence for healthy verdict
+                if has_elevated_titers and not (has_fever or has_other_symptoms_count >= 2):
+                    confidence = round(60.0 + (1.0 - max(widal_o, widal_h)) * 30.0, 2)
+                    desc = "Elevated Widal titers detected without active clinical symptoms (Fever/Abdominal pain). Suggests past exposure or vaccination, not active infection."
+                    exps = [f"Elevated somatic/flagellar titers (O: {widal_o:.2f}, H: {widal_h:.2f}) suggest immunogenic exposure or history, but lack of diagnostic clinical symptoms rules out active Typhoid Fever."]
+                    recs = [
+                        "Monitor patient for onset of clinical symptoms (fever, chills, abdominal pain).",
+                        "Evaluate clinical history for past Typhoid vaccine or prior infections."
+                    ]
+                elif symptom_strs:
+                    confidence = round(55.0 + (1.0 - max(widal_o, widal_h)) * 25.0, 2)
+                    desc = f"Patient presents with symptoms of {', '.join(symptom_strs)}, but laboratory Widal test titers are normal, making Typhoid Fever unlikely."
+                    exps = [
+                        "Widal titers (O and H) do not show clinical significance for Salmonella infection.",
+                        f"Reported symptoms ({', '.join(symptom_strs)}) may be related to other non-Salmonella febrile illnesses (e.g., malaria, gastroenteritis)."
+                    ]
+                    recs = [
+                        "Investigate alternative causes of reported febrile/clinical symptoms (e.g., malaria, gastroenteritis).",
+                        "Monitor symptoms and repeat clinical review if fever persists."
+                    ]
+                else:
+                    confidence = round(75.0 + (1.0 - max(widal_o, widal_h)) * 20.0, 2)
+                    desc = "Widal titers and liver biomarkers are within physiological baselines with no reported symptoms."
+                    exps = ["Widal O and H titers do not indicate clinical significance for Salmonella infection."]
+                    recs = ["Maintain regular sanitary and hygiene practices."]
+
+                confidence = min(98.0, max(50.0, confidence))
 
             result = {
                 "prediction": pred_label,
@@ -213,6 +301,7 @@ def predict():
                 },
                 "description": desc,
                 "explanations": exps,
+                "symptoms": symptom_strs,
                 "recommendations": recs + [
                     "Consult a licensed medical professional for formal clinical review.",
                     "Ensure all biomarker inputs match your latest laboratory report."
