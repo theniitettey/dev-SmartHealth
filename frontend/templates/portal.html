@@ -93,6 +93,15 @@
     {% endfor %}
   </div>
 
+  {% if rec_dict.result and rec_dict.result.get('symptoms') %}
+  <div class="portal-section-title mt-3"><i class="fa-solid fa-clipboard-list"></i> Clinical Symptoms</div>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    {% for sym in rec_dict.result.get('symptoms') %}
+    <span style="display:inline-block; padding:6px 12px; border-radius:4px; font-size:0.85rem; background:rgba(244,223,107,0.15); border:1px solid rgba(244,223,107,0.3); color:var(--amber-warn);">{{ sym }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <div class="portal-section-title mt-4"><i class="fa-solid fa-signature"></i> Diagnosis Decision & Finalization</div>
   
   <input type="hidden" id="modalSelectModel" value="random_forest">
@@ -190,6 +199,13 @@
           <input type="checkbox" id="pdfSec_logo" class="pdf-section-toggle" checked> Hospital Logo (Optional)
         </label>
       </div>
+      {% if rec_dict.result and rec_dict.result.get('symptoms') %}
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer; color:var(--text-primary);">
+          <input type="checkbox" id="pdfSec_symptoms" class="pdf-section-toggle" checked> Clinical Symptoms
+        </label>
+      </div>
+      {% endif %}
     </div>
   </div>
 
@@ -223,6 +239,9 @@
       <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_notes" checked onchange="togglePrintSection('notes')"> Doctor's Notes</label></div>
       <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_signature" checked onchange="togglePrintSection('signature')"> Signature</label></div>
       <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_logo" checked onchange="togglePrintSection('logo')"> Clinic Logo</label></div>
+      {% if rec_dict.result and rec_dict.result.get('symptoms') %}
+      <div class="col-6 col-md-3"><label class="d-flex align-items-center gap-2" style="font-size:0.8rem; cursor:pointer; color:var(--text-primary);"><input type="checkbox" id="printSec_symptoms" checked onchange="togglePrintSection('symptoms')"> Symptoms</label></div>
+      {% endif %}
     </div>
   </div>
 
@@ -260,6 +279,17 @@
         {% endfor %}
       </div>
     </div>
+
+    {% if rec_dict.result and rec_dict.result.get('symptoms') %}
+    <div id="reportSection_symptoms" class="mb-4">
+      <h5 style="color:var(--cyan-primary); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; font-size:0.95rem; margin-bottom:10px;"><i class="fa-solid fa-clipboard-list"></i> Clinical Symptoms</h5>
+      <div class="d-flex flex-wrap gap-2 text-start">
+        {% for sym in rec_dict.result.get('symptoms') %}
+        <span class="symptom-badge" style="display:inline-block; padding:4px 8px; border-radius:4px; font-size:0.8rem; background:rgba(244,223,107,0.15); border:1px solid rgba(244,223,107,0.3); color:var(--amber-warn);">{{ sym }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
     <div id="reportSection_ml" class="mb-4">
       <h5 style="color:var(--cyan-primary); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; font-size:0.95rem; margin-bottom:10px;"><i class="fa-solid fa-robot"></i> Machine Learning Inference</h5>
@@ -727,6 +757,59 @@
   <p class="dash-empty">No diagnostic activity recorded yet.</p>
   {% endif %}
 </div>
+
+{# ── ADMIN: HISTORY ── #}
+{% elif section == 'history' %}
+<div class="portal-card">
+  <div class="portal-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Diagnosis History (All Doctors)</div>
+  {% if records %}
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Attending Doctor</th>
+          <th>Patient Name / Ref</th>
+          <th>Condition</th>
+          <th>Confidence</th>
+          <th>Model</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>{{ r.created_at.strftime('%d %b %Y, %H:%M') if r.created_at else '—' }}</td>
+          <td>
+            <strong>{{ r.author.full_name if r.author else 'System/Deleted' }}</strong><br>
+            <small style="color:var(--text-secondary);">{{ r.author.email if r.author else '' }}</small>
+          </td>
+          <td>
+            {% if r.patient %}
+            <strong>{{ r.patient.first_name }} {{ r.patient.last_name }}</strong><br>
+            <small style="color:var(--text-secondary);">ID: {{ r.patient.patient_uuid }}</small>
+            {% else %}
+            <span class="text-muted">Standalone Reference:</span><br>
+            <small style="color:var(--text-secondary);">{{ r.patient_reference or ('SHS-' ~ r.id) }}</small>
+            {% endif %}
+          </td>
+          <td><strong style="color:var(--cyan-primary);">{{ r.prediction_label }}</strong></td>
+          <td>{{ '%.1f' | format(r.confidence_score or 0) }}%</td>
+          <td>{{ (r.model_version or '—') | replace('_', ' ') | title }}</td>
+          <td><span class="status-badge status-{{ r.status }}">{{ r.status }}</span></td>
+          <td>
+            <a href="/portal?section=view_record&record_id={{ r.id }}" class="btn-action-verify btn-approve"><i class="fa-solid fa-eye"></i> Details</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="dash-empty"><i class="fa-solid fa-folder-open"></i> No diagnoses recorded in the system yet.</p>
+  {% endif %}
+</div>
 {% endif %}
 
 {% elif session.get('role') == 'doctor' %}
@@ -807,7 +890,7 @@
                 {% endif %}
               </td>
               <td>{{ r.prediction_label }}</td>
-              <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
+              <td>{{ '%.1f' | format(r.confidence_score or 0) }}%</td>
               <td><a href="/portal?section=view_record&record_id={{ r.id }}" class="btn-action-verify btn-approve"><i
                     class="fa-solid fa-eye"></i> View</a></td>
             </tr>
@@ -916,7 +999,7 @@
           </td>
           <td>{{ r.patient_reference or ('SHS-' ~ r.id) }}</td>
           <td><strong style="color:var(--cyan-primary);">{{ r.prediction_label }}</strong></td>
-          <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
+          <td>{{ '%.1f' | format(r.confidence_score or 0) }}%</td>
           <td>{{ (r.model_version or '—') | replace('_', ' ') | title }}</td>
           <td><span class="status-badge status-{{ r.status }}">{{ r.status }}</span></td>
           <td>
@@ -971,7 +1054,7 @@
           </td>
           <td>{{ r.patient_reference or ('SHS-' ~ r.id) }}</td>
           <td><strong style="color:var(--cyan-primary);">{{ r.prediction_label }}</strong></td>
-          <td>{{ '%.1f' | format(r.confidence_score) }}%</td>
+          <td>{{ '%.1f' | format(r.confidence_score or 0) }}%</td>
           <td>
             <a href="/portal?section=view_record&record_id={{ r.id }}" class="btn-action-verify btn-approve"><i
                 class="fa-solid fa-file-signature"></i> Review &amp; Diagnose</a>
@@ -1002,7 +1085,7 @@
       <div class="report-card">
         <div class="report-card-date">{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</div>
         <div class="report-card-diag">{{ r.prediction_label }}</div>
-        <div class="report-card-conf">{{ '%.1f' | format(r.confidence_score) }}% confidence</div>
+        <div class="report-card-conf">{{ '%.1f' | format(r.confidence_score or 0) }}% confidence</div>
         <a href="/portal?section=view_record&record_id={{ r.id }}" class="btn-outline btn-sm w-100 mt-2 text-center"
           style="display:inline-block;text-decoration:none;">
           <i class="fa-solid fa-eye"></i> View Report
@@ -1486,7 +1569,7 @@
 
     const sections = [];
     const sectionIds = [
-      'patient', 'biomarkers', 'ml_pred', 'confidence', 'final_diag', 'ai_exp', 'doctor_notes', 'signature', 'logo'
+      'patient', 'biomarkers', 'symptoms', 'ml_pred', 'confidence', 'final_diag', 'ai_exp', 'doctor_notes', 'signature', 'logo'
     ];
     sectionIds.forEach(sec => {
       const el = document.getElementById(`pdfSec_${sec}`);
@@ -1587,6 +1670,23 @@
           `;
       }
       
+      if (selectedSections.includes('symptoms') && record.result && record.result.symptoms && record.result.symptoms.length > 0) {
+          html += `
+              <div style="margin-bottom:20px; border-bottom:1px solid #dddddd; padding-bottom:12px;">
+                <h5 style="color:#8E9630; font-size:0.95rem; margin-bottom:10px; font-weight: bold;">Clinical Symptoms</h5>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          `;
+          record.result.symptoms.forEach(sym => {
+              html += `
+                  <span style="display:inline-block; padding:4px 8px; border-radius:4px; font-size:0.8rem; background:#fff3cd; border:1px solid #ffeeba; color:#856404; font-weight: 500;">${sym}</span>
+              `;
+          });
+          html += `
+                </div>
+              </div>
+          `;
+      }
+      
       if (selectedSections.includes('final_diag')) {
           html += `
               <div style="margin-bottom:20px; border-bottom:1px solid #dddddd; padding-bottom:8px;">
@@ -1650,36 +1750,48 @@
       }
       
       html += `</div>`;
-      
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = html;
-      
-      // Add container to DOM so html2canvas can measure layout dimensions
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '0';
-      tempDiv.style.width = '800px';
-      tempDiv.style.background = '#ffffff';
-      tempDiv.style.color = '#111111';
-      document.body.appendChild(tempDiv);
-      
-      const opt = {
-          margin:       10,
-          filename:     `SmartHealth-Report-${record.patient_reference || record.id}.pdf`,
-          image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-      
+
       loadHtml2PdfLibrary(() => {
-          window.html2pdf().set(opt).from(tempDiv).save().then(() => {
-              document.body.removeChild(tempDiv);
-              window.location.href = "/portal?section=history";
-          }).catch(err => {
-              console.error("PDF generation failed:", err);
-              document.body.removeChild(tempDiv);
-              window.location.href = "/portal?section=history";
-          });
+          const iframe = document.createElement('iframe');
+          // Real height so html2canvas has a proper viewport — height:0 causes offset blank
+          iframe.style.cssText = 'position:fixed;top:-99999px;left:0;width:800px;height:1200px;border:none;overflow:hidden;';
+          document.body.appendChild(iframe);
+
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          iframeDoc.open();
+          iframeDoc.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    *{box-sizing:border-box;}
+    html,body{background:#ffffff!important;color:#111111!important;font-family:'DM Sans',Arial,sans-serif;margin:0;padding:0;width:800px;}
+    *{font-family:'DM Sans',Arial,sans-serif;}
+  </style>
+</head>
+<body>${html}</body>
+</html>`);
+          iframeDoc.close();
+
+          const opt = {
+              margin:      10,
+              filename:    `SmartHealth-Report-${record.patient_reference || record.id}.pdf`,
+              image:       { type: 'jpeg', quality: 0.98 },
+              // scrollX/Y:0 locks capture at origin — prevents left-blank offset bug
+              html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+              jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+
+          setTimeout(() => {
+              window.html2pdf().set(opt).from(iframeDoc.body).save().then(() => {
+                  document.body.removeChild(iframe);
+                  window.location.href = "/portal?section=history";
+              }).catch(err => {
+                  console.error("PDF generation failed:", err);
+                  document.body.removeChild(iframe);
+                  window.location.href = "/portal?section=history";
+              });
+          }, 600);
       });
   }
 </script>
