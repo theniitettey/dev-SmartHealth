@@ -443,26 +443,53 @@
           <div class="reveal">
             <label class="input-label">
               <span class="bm-clinical-name">Widal O Titer</span>
-              <span class="input-range-hint">0.0–1.0</span>
+              <span class="input-range-hint">0.0–1.0 (or raw titer)</span>
             </label>
             <div class="input-unit-badge">score · normalised</div>
-            <input type="number" step="0.01" class="biomarker-input" id="f-WidalO"
-                   data-feature="Widal O Titer" value="0.5" min="0" max="1" required>
-            <div class="clinical-ref-range">Normal: &lt;0.5 · Elevated: &gt;0.55</div>
-            <div class="field-error-msg" id="err-WidalO">Enter a value between 0.0 and 1.0</div>
+            <input type="number" step="any" class="biomarker-input" id="f-WidalO"
+                   data-feature="Widal O Titer" value="0.5" min="0" required>
+            <div class="clinical-ref-range">Normal: &lt;0.5 (or &lt;80) · Elevated: &gt;0.55 (or &gt;=80)</div>
+            <div class="field-error-msg" id="err-WidalO">Enter a valid positive score or raw titer (e.g. 80, 160)</div>
           </div>
         </div>
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <div class="reveal">
             <label class="input-label">
               <span class="bm-clinical-name">Widal H Titer</span>
-              <span class="input-range-hint">0.0–1.0</span>
+              <span class="input-range-hint">0.0–1.0 (or raw titer)</span>
             </label>
             <div class="input-unit-badge">score · normalised</div>
-            <input type="number" step="0.01" class="biomarker-input" id="f-WidalH"
-                   data-feature="Widal H Titer" value="0.5" min="0" max="1" required>
-            <div class="clinical-ref-range">Normal: &lt;0.5 · Elevated: &gt;0.55</div>
-            <div class="field-error-msg" id="err-WidalH">Enter a value between 0.0 and 1.0</div>
+            <input type="number" step="any" class="biomarker-input" id="f-WidalH"
+                   data-feature="Widal H Titer" value="0.5" min="0" required>
+            <div class="clinical-ref-range">Normal: &lt;0.5 (or &lt;160) · Elevated: &gt;0.55 (or &gt;=160)</div>
+            <div class="field-error-msg" id="err-WidalH">Enter a valid positive score or raw titer (e.g. 80, 160)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typhoid Clinical Symptoms Checklist (Only visible for Typhoid Prediction) -->
+      <div class="biomarker-group-title reveal typhoid-only-group" style="display:none; margin-top:20px;">Clinical Symptoms (Typhoid Only)</div>
+      <div class="row g-3 mb-4 stagger-children typhoid-only-group" style="display:none;">
+        <div class="col-12">
+          <p class="auth-field-hint" style="margin-top:-10px; margin-bottom:15px;">
+            Select all active clinical symptoms reported by the patient:
+          </p>
+          <div class="d-flex flex-wrap gap-4 p-3" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-md);">
+            <label class="d-flex align-items-center gap-2" style="font-size:0.9rem; cursor:pointer; color:var(--text-primary);">
+              <input type="checkbox" id="symp-fever" class="typhoid-symptom-input" value="fever" style="accent-color:var(--cyan-primary); width:16px; height:16px;"> Prolonged High Fever (≥39°C / 102°F)
+            </label>
+            <label class="d-flex align-items-center gap-2" style="font-size:0.9rem; cursor:pointer; color:var(--text-primary);">
+              <input type="checkbox" id="symp-pain" class="typhoid-symptom-input" value="abdominal_pain" style="accent-color:var(--cyan-primary); width:16px; height:16px;"> Abdominal Pain / Cramps
+            </label>
+            <label class="d-flex align-items-center gap-2" style="font-size:0.9rem; cursor:pointer; color:var(--text-primary);">
+              <input type="checkbox" id="symp-headache" class="typhoid-symptom-input" value="headache" style="accent-color:var(--cyan-primary); width:16px; height:16px;"> Severe Headache
+            </label>
+            <label class="d-flex align-items-center gap-2" style="font-size:0.9rem; cursor:pointer; color:var(--text-primary);">
+              <input type="checkbox" id="symp-diarrhea" class="typhoid-symptom-input" value="diarrhea_constipation" style="accent-color:var(--cyan-primary); width:16px; height:16px;"> Diarrhea or Constipation
+            </label>
+            <label class="d-flex align-items-center gap-2" style="font-size:0.9rem; cursor:pointer; color:var(--text-primary);">
+              <input type="checkbox" id="symp-fatigue" class="typhoid-symptom-input" value="fatigue" style="accent-color:var(--cyan-primary); width:16px; height:16px;"> Severe Fatigue & Weakness
+            </label>
           </div>
         </div>
       </div>
