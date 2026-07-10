@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const badge = document.getElementById("notifBadge");
     if (badge) {
         fetchNotifications();
-        setInterval(fetchNotifications, 15000); // Poll every 15s
+        setInterval(() => fetchNotifications(), 15000); // Poll every 15s
     }
 
     // Auto-load admin datasets table if present
@@ -95,26 +95,20 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ── Notification Utilities ── */
 
 let notifCurrentPage = 1;
-const SHOWN_NOTIF_KEY = "shs_shown_notifications";
+const shownNotifIds = new Set();
 
 function getShownNotifIds() {
-    try {
-        const raw = localStorage.getItem(SHOWN_NOTIF_KEY);
-        return raw ? new Set(JSON.parse(raw)) : new Set();
-    } catch {
-        return new Set();
-    }
+    return shownNotifIds;
 }
 
 function saveShownNotifIds(set) {
-    try {
-        localStorage.setItem(SHOWN_NOTIF_KEY, JSON.stringify(Array.from(set)));
-    } catch (err) {}
+    // No-op, updated in-memory Set
 }
 
-async function fetchNotifications(page = notifCurrentPage) {
+async function fetchNotifications(page) {
+    let targetPage = (typeof page === "number" && page > 0) ? page : notifCurrentPage;
     try {
-        const res = await fetch(`/api/notifications?page=${page}&per_page=5`);
+        const res = await fetch(`/api/notifications?page=${targetPage}&per_page=5`);
         const data = await res.json();
         if (!res.ok) return;
 
@@ -434,49 +428,110 @@ function downloadCustomReportPDF(id, patientRef) {
         return;
     }
     if (reportEl.innerText.trim().length < 50) {
-        alert("Error: Diagnosis report content is too short or empty. Unable to generate PDF. Please reload the page.");
+        alert("Error: Diagnosis report content is too short or empty. Please reload the page.");
         return;
     }
-    
-    const opt = {
-        margin:       10,
-        filename:     `SmartHealth-Report-${patientRef || id}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    
-    loadHtml2PdfLibrary(() => {
-        const clone = reportEl.cloneNode(true);
-        clone.style.background = "#ffffff";
-        clone.style.color = "#111111";
-        clone.style.padding = "20px";
-        clone.style.border = "none";
-        
-        clone.querySelectorAll("*").forEach(el => {
-            el.style.color = "#111111";
-            if (el.classList.contains("biomarker-item")) {
-                el.style.border = "1px solid #dddddd";
-                el.style.background = "#fafafa";
-            }
-            if (el.classList.contains("status-badge")) {
-                el.style.background = "#d4edda";
-                el.style.color = "#155724";
-            }
-            if (el.classList.contains("prob-bar")) {
-                el.style.background = "#eeeeee";
-                el.style.border = "none";
-            }
-            if (el.classList.contains("prob-fill")) {
-                el.style.background = "#8E9630";
-            }
-            if (el.classList.contains("prob-fill-neural")) {
-                el.style.background = "#a855f7";
-            }
-        });
 
-        window.html2pdf().set(opt).from(clone).save();
-    });
+    // Use the exact same HTML/CSS as printCustomReport (which renders correctly),
+    // but load html2pdf inside the popup instead of calling window.print().
+    const filename = `SmartHealth-Report-${patientRef || id}.pdf`;
+    const popupWindow = window.open("", "_blank");
+    popupWindow.document.write(`
+        <html>
+        <head>
+            <title>${filename}</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+            <style>
+                body {
+                    background: #ffffff !important;
+                    color: #111111 !important;
+                    font-family: 'DM Sans', sans-serif;
+                    padding: 40px;
+                }
+                .printable-report-wrapper {
+                    border: none !important;
+                    background: transparent !important;
+                    padding: 0 !important;
+                    color: #111111 !important;
+                }
+                h4, h5, strong, th, td {
+                    color: #111111 !important;
+                }
+                .biomarkers-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 15px;
+                    margin-top: 15px;
+                }
+                .biomarker-item {
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    border-radius: 6px;
+                }
+                .biomarker-name { font-size: 0.8rem; color: #555; }
+                .biomarker-val  { font-size: 1.1rem; font-weight: 600; }
+                .status-badge {
+                    display: inline-block;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 0.8rem;
+                    font-weight: bold;
+                    text-transform: capitalize;
+                }
+                .status-approved { background-color: #d4edda; color: #155724; }
+                .prob-bar {
+                    height: 8px;
+                    background: #eeeeee !important;
+                    border-radius: 4px;
+                    overflow: hidden;
+                    margin-top: 4px;
+                    width: 100%;
+                }
+                .prob-fill        { height: 100%; border-radius: 4px; background: #8E9630 !important; }
+                .prob-fill-neural { height: 100%; border-radius: 4px; background: #a855f7 !important; }
+                * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                #pdf-status {
+                    position: fixed; top: 10px; right: 10px;
+                    background: #2a7a4b; color: #fff;
+                    padding: 8px 16px; border-radius: 4px;
+                    font-family: sans-serif; font-size: 0.85rem;
+                }
+            </style>
+        </head>
+        <body>
+            <div id="pdf-status">Generating PDF…</div>
+            <div class="printable-report-wrapper">
+                ${reportEl.innerHTML}
+            </div>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
+            <script>
+                window.onload = function() {
+                    var status = document.getElementById('pdf-status');
+                    var content = document.querySelector('.printable-report-wrapper');
+                    var opt = {
+                        margin:      [10, 10, 10, 10],
+                        filename:    '${filename}',
+                        image:       { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+                        jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+                    html2pdf().set(opt).from(content).save().then(function() {
+                        status.textContent = 'Done! You can close this tab.';
+                        setTimeout(function() { window.close(); }, 1500);
+                    }).catch(function(err) {
+                        status.style.background = '#c0392b';
+                        status.textContent = 'Error: ' + err.message;
+                    });
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    popupWindow.document.close();
 }
 
 
